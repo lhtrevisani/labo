@@ -6,8 +6,8 @@ require("data.table")
 require("rpart")
 require("rpart.plot")
 
-#Aqui se debe poner la carpeta de la materia de SU computadora local
-setwd("D:\\gdrive\\UBA2022\\")  #Establezco el Working Directory
+`#Aqui se debe poner la carpeta de la materia de SU computadora local
+setwd("/home/lucas/Maestria/DMEyF")  #Establezco el Working Directory
 
 #cargo el dataset
 dataset  <- fread("./datasets/competencia1_2022.csv")
