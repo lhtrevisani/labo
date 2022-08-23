@@ -24,9 +24,10 @@ require("DiceKriging")
 require("mlrMBO")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos el dataset
 dataset <- fread("./datasets/competencia1_2022.csv")
@@ -132,6 +133,8 @@ plot(dist_lhs)
 ## Preguntas
 ## - ¿Cuál distribución considera mejor? Justifique
 
+## conviene abarcar el mayor espacio posible al elegir una posible solución (o combinación de hiperparámetros) LHS, es mejor que
+## el random search (uni)
 
 ## ---------------------------
 ## Step 5: Tomando una muestra de sangre
@@ -168,12 +171,14 @@ ds_sample <- tomar_muestra(dataset)
 table(dataset[ds_sample]$clase_binaria)
 
 ## Preguntas
-## - ¿Qué tipo de muestre se tomó?
+## - ¿Qué tipo de muestre se tomó?  undersampling (o oversampling, según como lo veas)
 ## - ¿Hay mejores formas de muestrear?
-## - ¿Es bueno muestrear?
+## - ¿Es bueno muestrear? lo ideal sería trabajar con toda la población, pero sí conviene muestrar porque va a ser más rápido, entre otras cosas
 ## - ¿Qué efectos en las métricas va a producir el muestreo?
-## - ¿Por qué se eligió usar el AUC?
+## - ¿Por qué se eligió usar el AUC? AUC tiene en cuenta el ordenamiento por lo que no se ve afectada por el desbalanceo.
+# la función de ganancia estaría afectada porque se cambian las proporciones en los nodos del arbol (eliminé muchos continua)
 ## - ¿Qué hay que cambiar en la función de ganancia para poder utilizarla?
+## debería bajar el costo de los baja+2
 
 ## ---------------------------
 ## Step 6: Comparando tiempos con o sin muestras
@@ -250,17 +255,21 @@ ggplot(resultados_random_search, aes(x = md, y = ms, color = auc)) +
     geom_point(aes(size = auc))
 
 
+resultados_random_search[which.max(resultados_random_search$auc)]
+
 ## Preguntas
-## - ¿Hay alguna zona dónde parece que hay más ganancia?
-## - ¿Cómo podemos continuar nuestra búsqueda?
+## - ¿Hay alguna zona dónde parece que hay más ganancia? arriba a la derecha parecería ser el mejor cuadrante
+## - ¿Cómo podemos continuar nuestra búsqueda? podría acotar el rango de búsqueda de hiperparámetros y volvería a usar LHS.
 
 ###
 ### Break time =)
 ###
 
 ## ---------------------------
-## Step 8: Trabajando con herramientas más profesionales
+## Step 8: Trabajando con herramientas más profesionales  (entrando en la optimización bayesiana)
 ## ---------------------------
+
+# siempre es importante un primer paso de exploración y luego una instancia de explotación.
 
 # Veamos un ejemplo
 set.seed(semillas[1])
@@ -388,3 +397,65 @@ print(run_md_ms)
 ## Agregue todos los parámetros que considere. Una vez que tenga sus mejores
 ## parámetros, haga una copia del script rpart/z101_PrimerModelo.R, cambie los
 ## parámetros dentro del script, ejecutelo y suba a Kaggle su modelo.
+
+
+# para 3 parametros
+
+set.seed(semillas[1])
+obj_fun_md_ms <- function(x) {
+  experimento_rpart(dataset, semillas
+                    , md = x$maxdepth
+                    , ms = x$minsplit
+                    , mb = floor(x$minbucket * x$minsplit))
+}
+
+obj_fun <- makeSingleObjectiveFunction(
+  minimize = FALSE,
+  fn = obj_fun_md_ms,
+  par.set = makeParamSet(
+    makeIntegerParam("maxdepth",  lower = 4L, upper = 20L),
+    makeIntegerParam("minsplit",  lower = 1L, upper = 200L),
+    makeNumericParam("minbucket",  lower = 0, upper = 1)
+  ),
+  # noisy = TRUE,
+  has.simple.signature = FALSE
+)
+
+ctrl <- makeMBOControl()
+ctrl <- setMBOControlTermination(ctrl, iters = 30L) ## mayor espacio de búsqueda, conviene más iteraciones.
+ctrl <- setMBOControlInfill(
+  ctrl,
+  crit = makeMBOInfillCritEI(),
+  opt = "focussearch",
+  # sacar parámetro opt.focussearch.points en próximas ejecuciones
+  opt.focussearch.points = 20
+)
+
+lrn <- makeMBOLearner(ctrl, obj_fun)
+
+surr_km <- makeLearner("regr.km", predict.type = "se", covtype = "matern3_2")
+
+run_md_ms <- mbo(obj_fun, learner = surr_km, control = ctrl, )
+print(run_md_ms)
+
+
+## volver a correr esto, sacando el sample.(hacerlo con todo el dataset) que explore en todo el universo. 
+## cp va en -1
+## reemplazar auc y poner función de ganancia
+## volver a correr todo y subir a kaggle.
+
+experimento_rpart <- function(ds, semillas, cp = 0, ms = 20, mb = 1, md = 10) {
+  auc <- c()
+  for (s in semillas) {
+    set.seed(s)
+    in_training <- caret::createDataPartition(ds$clase_binaria, p = 0.70,
+                                              list = FALSE)
+    train  <-  ds[in_training, ]
+    test   <-  ds[-in_training, ]
+    train_sample <- tomar_muestra(train)
+    r <- modelo_rpart(train[train_sample,], test, 
+                      cp = cp, ms = ms, mb = mb, md = md)
+    auc <- c(auc, r)  # acá poner la ganancia
+  }
+  mean(auc)
+}
