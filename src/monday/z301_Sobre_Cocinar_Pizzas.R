@@ -34,12 +34,10 @@ dataset <- fread("./datasets/competencia1_2022.csv")
 
 # Nos quedamos solo con el 202101
 dataset <- dataset[foto_mes == 202101]
+
 # Creamos una clase binaria
-dataset[, clase_binaria := ifelse(
-                            clase_ternaria == "BAJA+2",
-                                "evento",
-                                "noevento"
-                            )]
+dataset[, clase_binaria := ifelse(clase_ternaria == "BAJA+2", "evento", "noevento")]
+
 # Borramos el target viejo
 dataset[, clase_ternaria := NULL]
 
@@ -47,8 +45,8 @@ dataset[, clase_ternaria := NULL]
 set.seed(semillas[1])
 
 # Particionamos de forma estratificada
-in_training <- caret::createDataPartition(dataset$clase_binaria,
-                     p = 0.70, list = FALSE)
+in_training <- caret::createDataPartition(dataset$clase_binaria, p = 0.70, list = FALSE)
+
 dtrain  <-  dataset[in_training, ]
 dtest   <-  dataset[-in_training, ]
 
@@ -58,6 +56,7 @@ dtest   <-  dataset[-in_training, ]
 
 # Calculamos cuanto tarda un modelo "promedio" entrenar.
 start_time <- Sys.time()
+
 modelo <- rpart(clase_binaria ~ .,
                 data = dtrain,
                 xval = 0,
@@ -158,6 +157,22 @@ modelo_rpart <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10) {
     unlist(auc_t@y.values)
 }
 
+
+# Armamos una función para modelar con el fin de simplificar el código futuro
+modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10) {
+  modelo <- rpart(clase_binaria ~ ., data = train,
+                  xval = 0,
+                  cp = cp,
+                  minsplit = ms,
+                  minbucket = mb,
+                  maxdepth = md)
+  
+  test_prediccion <- predict(modelo, test, type = "prob")
+  ganancia(test_prediccion[, "evento"], test$clase_binaria) / 0.3
+  
+}
+
+
 # Función para tomar un muestra dejando todos los elementos de la clase BAJA+2
 tomar_muestra <- function(datos, resto = 10000) {
       t <- datos$clase_binaria == "evento"
@@ -225,6 +240,24 @@ experimento_rpart <- function(ds, semillas, cp = 0, ms = 20, mb = 1, md = 10) {
   mean(auc)
 }
 
+
+# Una función auxiliar para los experimentos
+experimento_rpart_completo <- function(ds, semillas, cp = -1, ms = 20, mb = 1, md = 10) {
+  gan <- c()
+  for (s in semillas) {
+    set.seed(s)
+    in_training <- caret::createDataPartition(ds$clase_binaria, p = 0.70,
+                                              list = FALSE)
+    train  <-  ds[in_training, ]
+    test   <-  ds[-in_training, ]
+    #train_sample <- tomar_muestra(train)
+    r <- modelo_rpart_ganancia(train, test, 
+                               cp = cp, ms = ms, mb = mb, md = md)
+    gan <- c(gan, r)
+  }
+  mean(gan)
+}
+
 # Haremos 25 experimentos aleatorios, armamos las muestras de acuerdo a como
 # son las entradas de nuestro experimento.
 
@@ -273,6 +306,7 @@ resultados_random_search[which.max(resultados_random_search$auc)]
 
 # Veamos un ejemplo
 set.seed(semillas[1])
+
 obj_fun <- makeSingleObjectiveFunction(
   name = "Sine",
   fn = function(x) sin(x),
@@ -281,8 +315,7 @@ obj_fun <- makeSingleObjectiveFunction(
 
 ctrl <- makeMBOControl()
 ctrl <- setMBOControlTermination(ctrl, iters = 10L)
-ctrl <- setMBOControlInfill(ctrl, crit = makeMBOInfillCritEI(),
-                           opt = "focussearch")
+ctrl <- setMBOControlInfill(ctrl, crit = makeMBOInfillCritEI(), opt = "focussearch")
 
 lrn <- makeMBOLearner(ctrl, obj_fun)
 design <- generateDesign(6L, getParamSet(obj_fun), fun = lhs::maximinLHS)
@@ -399,30 +432,33 @@ print(run_md_ms)
 ## parámetros dentro del script, ejecutelo y suba a Kaggle su modelo.
 
 
-# para 3 parametros
+## ---------------------------
+## Step 11: Mas opt. Bayesiana para 3 parámetros
+## ---------------------------
 
 set.seed(semillas[1])
-obj_fun_md_ms <- function(x) {
-  experimento_rpart(dataset, semillas
-                    , md = x$maxdepth
-                    , ms = x$minsplit
-                    , mb = floor(x$minbucket * x$minsplit))
+obj_fun_md_ms_mb <- function(x) {
+  experimento_rpart_completo(dataset, semillas
+                             , md = x$maxdepth
+                             , ms = x$minsplit
+                             , mb = floor(x$minsplit*x$minbucket))
 }
 
 obj_fun <- makeSingleObjectiveFunction(
   minimize = FALSE,
-  fn = obj_fun_md_ms,
+  fn = obj_fun_md_ms_mb,
   par.set = makeParamSet(
     makeIntegerParam("maxdepth",  lower = 4L, upper = 20L),
     makeIntegerParam("minsplit",  lower = 1L, upper = 200L),
-    makeNumericParam("minbucket",  lower = 0, upper = 1)
+    makeNumericParam("minbucket",  lower = 0L, upper = 1L)
+    # makeNumericParam <- para parámetros continuos
   ),
-  # noisy = TRUE,
+  noisy = TRUE,
   has.simple.signature = FALSE
 )
 
 ctrl <- makeMBOControl()
-ctrl <- setMBOControlTermination(ctrl, iters = 30L) ## mayor espacio de búsqueda, conviene más iteraciones.
+ctrl <- setMBOControlTermination(ctrl, iters = 30L)
 ctrl <- setMBOControlInfill(
   ctrl,
   crit = makeMBOInfillCritEI(),
@@ -439,23 +475,6 @@ run_md_ms <- mbo(obj_fun, learner = surr_km, control = ctrl, )
 print(run_md_ms)
 
 
-## volver a correr esto, sacando el sample.(hacerlo con todo el dataset) que explore en todo el universo. 
-## cp va en -1
-## reemplazar auc y poner función de ganancia
-## volver a correr todo y subir a kaggle.
-
-experimento_rpart <- function(ds, semillas, cp = 0, ms = 20, mb = 1, md = 10) {
-  auc <- c()
-  for (s in semillas) {
-    set.seed(s)
-    in_training <- caret::createDataPartition(ds$clase_binaria, p = 0.70,
-                                              list = FALSE)
-    train  <-  ds[in_training, ]
-    test   <-  ds[-in_training, ]
-    train_sample <- tomar_muestra(train)
-    r <- modelo_rpart(train[train_sample,], test, 
-                      cp = cp, ms = ms, mb = mb, md = md)
-    auc <- c(auc, r)  # acá poner la ganancia
-  }
-  mean(auc)
-}
+#md = 5
+#ms = 39
+#mb = 0.999 * ms
