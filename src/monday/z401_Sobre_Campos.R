@@ -18,10 +18,14 @@ require("rpart")
 require("ggplot2")
 require("dplyr")
 
+options(scipen=999)
+
+
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos el dataset
 dataset <- fread("./datasets/competencia1_2022.csv")
@@ -35,6 +39,7 @@ dataset[, clase_binaria := ifelse(
                                 "evento",
                                 "noevento"
                             )]
+
 # Borramos el target viejo
 dataset[, clase_ternaria := NULL]
 
@@ -43,6 +48,7 @@ set.seed(semillas[1])
 # Particionamos de forma estratificada
 in_training <- caret::createDataPartition(dataset$clase_binaria,
                      p = 0.70, list = FALSE)
+
 dtrain  <-  dataset[in_training, ]
 dtest   <-  dataset[-in_training, ]
 
@@ -58,7 +64,7 @@ calcular_ganancia <- function(modelo, test) {
 ## Step 2: Importancia de variables
 ## ---------------------------
 
-# Antes de empezar vamos a ver la importancia de variables
+# Antes de empezar vamos a ver la importancia de variables. (importancia: cuantas veces se usó una variable para cortar)
 modelo <- rpart(clase_binaria ~ .,
                 data = dtrain,
                 xval = 0,
@@ -73,12 +79,15 @@ print(modelo$variable.importance)
 
 
 ## Preguntas
-## - ¿Cuáles son las variables más importantes para el modelo?
+## - ¿Cuáles son las variables más importantes para el modelo?  (importancia: cuantas veces se usó una variable para cortar)
 ## - ¿Cómo calcula RPART la importancia de una variable?
 ## - ¿Es la única forma de calcular la importancia de una variable?
 
+# generalmente, conviene sacar el número de cliente, acá funciona como una medida de antigüedad 
+# y no es algo tan complicado para este algoritmo (algunos memorizan)
+
 ## ---------------------------
-## Step 2: Datos nulos
+## Step 3: Datos nulos
 ## ---------------------------
 
 # En el summary del modelo buscamos un corte donde la primera variable
@@ -125,7 +134,7 @@ dtest[, Visa_fechaalta_2 := ifelse(is.na(Visa_fechaalta),
             0,
             Visa_fechaalta)] 
 
-calcular_ganancia(modelo2, dtest)
+calcular_ganancia(modelo2, dtest) # en este caso, da un poco mejor q antes. daría lo mismo imputar con 0 o -1 en este caso, las fronteras son las mismas
 
 ## Preguntas
 ## - ¿Desde el punto de vista de la importancia de variable, después que se 
@@ -136,6 +145,7 @@ calcular_ganancia(modelo2, dtest)
 ## ---------------------------
 
 mean_Visa_fechaalta <- mean(dtrain$Visa_fechaalta, na.rm = T)
+
 # Imputamos los nulos de nuestra variable con la media
 dtrain[, Visa_fechaalta_3 := ifelse(is.na(Visa_fechaalta), 
             mean_Visa_fechaalta,
@@ -155,7 +165,7 @@ modelo3 <- rpart(clase_binaria ~ . - Visa_fechaalta - Visa_fechaalta_2,
                 maxdepth = 5)
 
 print(modelo3$variable.importance)
-calcular_ganancia(modelo3, dtest)
+calcular_ganancia(modelo3, dtest)   # le va un poco peor que al resto de los modelos.
 
 ## Preguntas
 ## - ¿Son muchos los casos nulos?
@@ -172,13 +182,25 @@ calcular_ganancia(modelo3, dtest)
 
 experimento <- function() {
     gan <- c()
+    
     for (s in semillas) {
         set.seed(s)
-        in_training <- caret::createDataPartition(dataset$clase_binaria, p = 0.70,
-            list = FALSE)
+        in_training <- caret::createDataPartition(dataset$clase_binaria, p = 0.70, list = FALSE)
+        
         train  <-  dataset[in_training, ]
         test   <-  dataset[-in_training, ]
 
+        mean_Visa_fechaalta <- mean(dtrain$Visa_fechaalta, na.rm = T)
+        
+        # Imputamos los nulos de nuestra variable con la media
+        dtrain[, Visa_fechaalta_3 := ifelse(is.na(Visa_fechaalta), 
+                                            mean_Visa_fechaalta,
+                                            Visa_fechaalta)] 
+        
+        dtest[, Visa_fechaalta_3 := ifelse(is.na(Visa_fechaalta), 
+                                           mean_Visa_fechaalta,
+                                           Visa_fechaalta)] 
+        
         r <- rpart(clase_binaria ~ .,
                     data = train,
                     xval = 0,
@@ -192,8 +214,11 @@ experimento <- function() {
     mean(gan)
 }
 
-# Veamos la 
-## Preguntas
+
+experimento()
+
+# Veamos la preguntas
+
 ## - ¿Qué sucede si una transformación que depende del dataset no se aplica de
 ##   esta manera?
 ## - A como funciona el rpart ¿Qué decisión toma sobre esta variable?
@@ -215,6 +240,7 @@ modelo4 <- rpart(clase_binaria ~ . ,
                 minsplit = 20,
                 minbucket = 10,
                 maxdepth = 5)
+
 calcular_ganancia(modelo4, dtest)
 
 
@@ -305,7 +331,7 @@ for (var in mis_variables) {
 }
 
 ## ---------------------------
-## Step 9: Un + poco de R, seleccionar las variables para modelar 
+## Step 9: Un + poco de R, seleccionar las variables para modelar (por si no quiero modelar con todas las variables)
 ## ---------------------------
 
 # Las mejores más la variables rankeadas
@@ -336,7 +362,8 @@ print(modelo5$variable.importance)
 ## Step 10: Embeddings (Caseros)
 ## ---------------------------
 
-# Hagamos interactuar algunas variables para ver si conseguimos alguna mejor
+# Hagamos interactuar algunas variables para ver si conseguimos alguna mejor (no meter taaaantas variables)
+
 nuevas <- c()
 for (var1 in mis_variables_2) {
     for (var2 in mis_variables_2) {
