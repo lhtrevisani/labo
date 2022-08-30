@@ -1,0 +1,74 @@
+/*********************************** 
+CLASE 4
+***********************************/
+
+cómo separarían las siguientes funciones/algoritmos los siguientes objetos: reg log/perceptron, knn(1), árboles, redes neuronales
+
+árboles: fronteras de decisión perpendiculares
+knn: no tendría una forma definida, pero sería el q mejor separa
+reg log/perceptron: traza un hiperplano. 
+redes neuronales: se podría adaptar a cualquier forma (ver colah.github.io). al igual q svm, suman dimensiones a los datos para poder cortarlos/modelarlos.
+
+
+feature engineering: busca adaptar los datos para que los algoritmos/modelos performen bien.
+
+
+redes neuronales, knn, logística no soportan datos faltantes
+árboles sí aceptan datos faltantes, no es absolutamente necesario imputar datos.
+
+rpart, usa variables subrrogadas para trabajar con nulos (Variables q se comportan/separan muy parecido a las otras).
+cuando tenga un missing, los datos faltantes usan la variable subrogada para ver si van para la derecha o para la izquierda.
+
+imputando:
+fecha alta (días desde fecha de alta de tarjeta visa) ¿cómo lo imputo? 0, -1, 9999? qué conviene?
+
+imputando con la media cambio la distribución de la variable.
+podría estar cambiando el sentido de la variable (completo con el monto de deuda a alguien sin el producto)
+además, debería tomar la media únicamente con la info de train (y sería un nuevo parámetro a optimizar) -> sumo grados de libertad, debería evitarlo.
+
+
+correlaciones:
+a veces, cuando existen correlaciones perfectas puedo tener problemas para resolver las matrices al calcular los coeficientes. no debería tener una variable q sea combinación lineal de otra. o también podría tener matratrices mal condicionadas, generando valores de beta muy raros.
+
+para los árboles, no tendría problemas en el resultado, acumularía importancia en una de las variables.
+
+
+outliers:
+el árbol no se ve afectado por los outliers. x eso son tan útiles los árboles. árboles se llevan por el orden de los datos, no por otra cosa.
+
+*** SUELE SER MUY ÚTIL RANKEAR (ej. trabajar con deciles) *** 
+hay ciertas variables que se van moviendo (ej: saldos x infla, etc.) y un monto que cambia podría hacer que una instancia me cambie de nodo (el corte sigue siendo el mismo). es una forma de luchar contra el "data drifting".
+no todas las variables (x ej: cantidades no tiene sentido).
+
+podría hacer el binning en test, no hace falta usar el de train. los valores de corte serían los mismos. igual, no es lo óptimo hacer esto. con data online, no lo podría hacer porque no podría ordenar.
+
+*** Revisar la estructura (distribución) de enero vs marzo para las variables más importantes ***
+debería ver qué % de cada clase tengo en cada decil, por ej).
+
+*** si una variable me dio muy bien, probar qué da sacándola. me ayuda a encontrar valor en otras variables.
+
+algunos algoritmos de reducción de la dimensionalidad para ver: t-SNE, UMAP.
+
+embedding: tomo cierto espacio y lo transformo en otro espacio
+
+interacciones:
+ej: monto del préstamo por si solo quizás no nos diga nada, pero si lo relaciono con los ingresos de una persona, sí me puede ayudar a entender si lo va a pagar o no.
+
+otros tips:
+- hablar con gente q tenga conoc de dominio.
+- tarjetas (combinar visa + master):
+	q tarjetas en tot (tit+adic)
+	tiene?
+	saldo total?
+	estado tc
+	fecha cierre/vto
+	pagos
+	
+	comparar límites y sueldo y ver qué tan actualizado está el límite.
+	relacion entre limite y consumido
+	
+	renovaciones de tarjeta.
+	
+	
+TAREA:
+
