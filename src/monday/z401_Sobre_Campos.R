@@ -397,7 +397,7 @@ print(modelo6$variable.importance)
 ##
 ## TAREA: Multiples experimentos. Un script por cada uno que debe incluir:
 ## - Feature engineering correctamente aplicado
-## - Opt Bayesiana para el dataset que se incluya nuevas variables
+## - Opt Bayesiana para el dataset que se incluya nuevas variables (50 iter, 100 como max x ahora)
 ## - Scorear en los datos de marzo y subir a kaggle el score.
 
 
