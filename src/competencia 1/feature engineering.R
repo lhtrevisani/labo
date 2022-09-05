@@ -7,6 +7,7 @@ require("data.table")
 require("rpart")
 require("ggplot2")
 require("dplyr")
+require("mlrMBO")
 
 options(scipen=999)
 
@@ -19,21 +20,8 @@ semillas <- c(700423, 700429, 700433, 700459, 700471)
 # Cargamos el dataset
 dataset <- fread("./datasets/competencia1_2022.csv")
 
-# Nos quedamos solo con el 202101
-dataset <- dataset[foto_mes == 202101]
 
-# Creamos una clase binaria
-dataset[, clase_binaria := ifelse(
-  clase_ternaria == "CONTINUA",
-  "noevento",
-  "evento"
-)]
-
-# Borramos el target viejo
-dataset[, clase_ternaria := NULL]
-
-
-######################  Realizo feature engineering sobre el dataset ##################################
+######################  Realizo feature engineering sobre el dataset (operaciones entre columnas) ##################################
 
 ## Tiempo de vida en el banco 
 dataset[, vida_banco := (cliente_antiguedad/12) / (cliente_edad)]
@@ -104,33 +92,83 @@ dataset$na_count <- apply(dataset, 1, function(x) sum(is.na(x)))
 #View(dataset[sample(nrow(dataset), 15), ])
 
 
+############################################## separo enero de marzo ##################################################
 
-############################################ particiono el dataset ######################################################
 
-set.seed(semillas[1])
+# Nos quedamos solo con el 202101
+dtrain  <- dataset[ foto_mes==202101 ]  #defino donde voy a entrenar
+dapply  <- dataset[ foto_mes==202103 ]  #defino donde voy a aplicar el modelo
+
+# Creamos una clase binaria
+dtrain[, clase_binaria := ifelse(
+  clase_ternaria == "CONTINUA",
+  "noevento",
+  "evento"
+)]
+
+# Borramos el target viejo
+dtrain[, clase_ternaria := NULL]
+dapply[, clase_ternaria := NULL]
+
+############################################ particiono en train y "validación"  ######################################################
+
+#set.seed(semillas[1])
 
 # Particionamos de forma estratificada
-in_training <- caret::createDataPartition(dataset$clase_binaria,
-                                          p = 0.70, list = FALSE)
+#in_training <- caret::createDataPartition(dataset_enero$clase_binaria, p = 0.70, list = FALSE)
 
-dtrain  <-  dataset[in_training, ]
-dtest   <-  dataset[-in_training, ]
+#dtrain  <-  dataset_enero[in_training, ]
+#dvalid   <-  dataset_enero[-in_training, ]
 
-calcular_ganancia <- function(modelo, test) {
-  pred_testing <- predict(modelo, test, type = "prob")
-  sum(
-    (pred_testing[, "evento"] >= 0.025) * ifelse(test$clase_binaria == "evento",
-                                                 78000, -2000) / 0.3
-  )
-}
-
+#calcular_ganancia <- function(modelo, test) {
+#  pred_testing <- predict(modelo, test, type = "prob")
+#  sum(
+#    (pred_testing[, "evento"] >= 0.025) * ifelse(test$clase_binaria == "evento",
+#                                                 78000, -2000) / 0.3
+#  )
+#}
 
 ####################################### Optimización bayesiana ###########################################################
 
 set.seed(semillas[1])
 
+ganancia <- function(probabilidades, clase) {
+  return(sum(
+    (probabilidades >= 0.025) * ifelse(clase == "evento", 78000, -2000))
+  )
+}
+
+modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10) {
+  modelo <- rpart(clase_binaria ~ ., data = train,
+                  xval = 0,
+                  cp = cp,
+                  minsplit = ms,
+                  minbucket = mb,
+                  maxdepth = md)
+  
+  test_prediccion <- predict(modelo, test, type = "prob")
+  ganancia(test_prediccion[, "evento"], test$clase_binaria) / 0.3
+  
+}
+
+experimento_rpart_completo <- function(ds, semillas, cp = -1, ms = 20, mb = 1, md = 10) {
+  gan <- c()
+  for (s in semillas) {
+    set.seed(s)
+    in_training <- caret::createDataPartition(ds$clase_binaria, p = 0.70,
+                                              list = FALSE)
+    train  <-  ds[in_training, ]
+    test   <-  ds[-in_training, ]
+    #train_sample <- tomar_muestra(train)
+    r <- modelo_rpart_ganancia(train, test, cp = cp, ms = ms, mb = mb, md = md)
+    gan <- c(gan, r)
+  }
+  mean(gan)
+}
+
+
 obj_fun_md_ms_mb <- function(x) {
-  experimento_rpart_completo(dataset, semillas
+  experimento_rpart_completo(dtrain, semillas
                              , md = x$maxdepth
                              , ms = x$minsplit
                              , mb = floor(x$minsplit*x$minbucket)
@@ -141,17 +179,17 @@ obj_fun <- makeSingleObjectiveFunction(
   minimize = FALSE,
   fn = obj_fun_md_ms_mb,
   par.set = makeParamSet(
-    makeIntegerParam("maxdepth",  lower = 4L, upper = 20L),
-    makeIntegerParam("minsplit",  lower = 200L, upper = 2000L),
+    makeIntegerParam("maxdepth",  lower = 3L, upper = 20L),
+    makeIntegerParam("minsplit",  lower = 200L, upper = 8000L),
     makeNumericParam("minbucket",  lower = 0L, upper = 1L),
-    makeNumericParam("cp",  lower = -1L, upper = 1L)
+    makeNumericParam("cp",  lower = -1L, upper = 0.5)
   ),
   noisy = TRUE,
   has.simple.signature = FALSE
 )
 
 ctrl <- makeMBOControl()
-ctrl <- setMBOControlTermination(ctrl, iters = 50L)
+ctrl <- setMBOControlTermination(ctrl, iters = 100L)
 ctrl <- setMBOControlInfill(
   ctrl,
   crit = makeMBOInfillCritEI(),
@@ -167,3 +205,33 @@ surr_km <- makeLearner("regr.km", predict.type = "se", covtype = "matern3_2")
 run_md_ms <- mbo(obj_fun, learner = surr_km, control = ctrl, )
 print(run_md_ms)
 
+
+############################################# predigo marzo ##################################################################
+
+modelo  <- rpart(formula=   "clase_binaria ~ .",  #quiero predecir clase_ternaria a partir de el resto de las variables
+                 data=      dtrain,  #los datos donde voy a entrenar
+                 xval=      0,
+                 cp=       -0.315,   #esto significa no limitar la complejidad de los splits
+                 minsplit=  3437,     #minima cantidad de registros para que se haga el split
+                 minbucket= 807,     #tamaño minimo de una hoja
+                 maxdepth=  8 )    #profundidad maxima del arbol
+
+prediccion  <- predict(object= modelo, newdata= dapply, type = "prob")
+
+#agrego a dapply una columna nueva que es la probabilidad de BAJA+2
+dapply[ , prob_baja2 := prediccion[, "evento"] ]
+
+#solo le envio estimulo a los registros con probabilidad de BAJA+2 mayor  a  1/40
+dapply[ , Predicted := as.numeric( prob_baja2 > 1/40 ) ]
+
+#genero el archivo para Kaggle
+#primero creo la carpeta donde va el experimento
+dir.create( "./exp/" )
+dir.create( "./exp/COMP1" )
+
+fwrite( dapply[ , list(numero_de_cliente, Predicted) ], #solo los campos para Kaggle
+        file= "./exp/COMP1/K101_002.csv",
+        sep=  "," )
+
+
+## qué pasa si me quedo con cierto porcentaje con la mayor probabilidad?
