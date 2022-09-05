@@ -234,4 +234,4 @@ fwrite( dapply[ , list(numero_de_cliente, Predicted) ], #solo los campos para Ka
         sep=  "," )
 
 
-## qué pasa si me quedo con cierto porcentaje con la mayor probabilidad?
+## cambiar punto de corte: podría ser también parte del proceso de optimización.

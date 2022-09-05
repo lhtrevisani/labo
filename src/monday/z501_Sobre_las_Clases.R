@@ -21,9 +21,10 @@ require("treeClust")
 require("ggplot2")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos el dataset
 dataset <- fread("./datasets/competencia1_2022.csv")
@@ -89,6 +90,7 @@ dtest   <-  dataset[-in_training, ]
 
 # Usamos parámetros ~~robados~~ sacados de los scripts de Gustavo.
 parametros <- list(cp = -1, minsplit = 1073, minbucket = 278, maxdepth = 9)
+
 # MUY IMPORTANTE: No estamos sacando los otros targets del dataset, hay
 # que sacarlos en la fórmula como esta debajo.
 modelo_bin2 <- rpart(clase_binaria2 ~ . - clase_ternaria - clase_binaria1,
@@ -179,6 +181,7 @@ train_bin2[p >= 0.025, sum(gan) / 0.7]
 
 # Podemos buscar el punto de corte optimo con un par de sentencias de R
 pos_max_gan <- which.max(train_bin2$gan_acum)
+
 # La ganancia máxima
 train_bin2[pos_max_gan, gan_acum]
 
@@ -228,7 +231,7 @@ print(res_bin2[, c("p", "n", "gan", "gan_acum", "te_n", "te_gan",
                   "te_gan_acum", "te_n_acum")])
 
 ## Preguntas
-## ¿Se mantiene el punto de corte en train como en test?
+## ¿Se mantiene el punto de corte en train como en test?  da un poco más chico.
 ## ¿Si tuviera que tomar una decisión, seguía usando el que dió train?
 
 ## ---------------------------
@@ -240,8 +243,10 @@ print(res_bin2[, c("p", "n", "gan", "gan_acum", "te_n", "te_gan",
 
 for (s in semillas) {
     set.seed(s)
+  
     in_training <- caret::createDataPartition(dataset$clase_binaria2,
                         p = 0.70, list = FALSE)
+    
     dtrain  <-  dataset[in_training, ]
     dtest   <-  dataset[-in_training, ]
 
@@ -268,10 +273,13 @@ for (s in semillas) {
     print(sprintf("Mejor gan_acum_train: %i - Mejor gan_acum_test: %i",
             pos_max_gan_train,
             pos_max_gan_test))
+    
     print(res_bin2[
             sort(seq(pos_max_gan_train, pos_max_gan_test))
             , c("p", "gan", "gan_acum", "te_n", "te_gan",
                 "te_gan_acum", "te_n_acum")])
+    
+    #print(res_bin2)
 
 }
 

@@ -1,0 +1,32 @@
+
+baja +1 y baja +2 se comportan muy parecido, tiene sentido juntarlos
+
+al cambiar las proporciones de clases al juntar baja + 1 y baja +2, se me modifica el punto de corte.
+
+punto de corte como otro valor a optimizar (búsqueda bayesiana)  -> puedo meterlo dentro de la optimización bayesiana con un rango relativamente acotado
+
+podría usar train (valid) para definir el punto de corte (hojas)
+
+cp = -1  (no hace falta optimizar)
+
+variables "canarito" (sirven para evitar el overfitting):
+agrego variables que tomen valores aleatorios para tratar de "engañar" al árbol. 
+si separa mejor que features reales, posiblemente no tenga sentido ese corte que esté haciendo. entonces si tengo hojas por debajo del "canarito", debería volar esas ramas.
+
+podría agregar canaritos,
+hacer árboles sin limitar crecimiento (sin setear hiperparámetros - o cp=-1, max depth 30, ms 2, mb = 1)
+y podo el árbol donde aparece un canarito.
+ej: 30% de la cant total de variables podría andar.
+
+podría servir para experimentar rápido con feature engineering o para sacar variables que no aparecen nunca.
+
+ver cuales son las variables que sacó del modelo que tienen data drifting
+( -mcomisiones_mantenimiento -Visa_mpagado)
+
+
+
+brainstorming:
+
+ojo con meter variables parecidas
+
+podría armar canarito para pruebas rápidas de FE, mientras por otro lado trabajo con la optimización de mis hiperparámetros.
