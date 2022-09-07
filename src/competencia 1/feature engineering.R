@@ -132,13 +132,13 @@ dapply[, clase_ternaria := NULL]
 
 set.seed(semillas[1])
 
-ganancia <- function(probabilidades, clase) {
+ganancia <- function(probabilidades, clase, threshold = 0.025) {
   return(sum(
-    (probabilidades >= 0.025) * ifelse(clase == "evento", 78000, -2000))
+    (probabilidades >= threshold) * ifelse(clase == "evento", 78000, -2000))
   )
 }
 
-modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10) {
+modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10, threshold = 0.025) {
   modelo <- rpart(clase_binaria ~ ., data = train,
                   xval = 0,
                   cp = cp,
@@ -147,20 +147,19 @@ modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10
                   maxdepth = md)
   
   test_prediccion <- predict(modelo, test, type = "prob")
-  ganancia(test_prediccion[, "evento"], test$clase_binaria) / 0.3
+  ganancia(test_prediccion[, "evento"], test$clase_binaria, threshold) / 0.3
   
 }
 
-experimento_rpart_completo <- function(ds, semillas, cp = -1, ms = 20, mb = 1, md = 10) {
+experimento_rpart_completo <- function(ds, semillas, cp = -1, ms = 20, mb = 1, md = 10, threshold = 0.025) {
   gan <- c()
   for (s in semillas) {
     set.seed(s)
-    in_training <- caret::createDataPartition(ds$clase_binaria, p = 0.70,
-                                              list = FALSE)
+    in_training <- caret::createDataPartition(ds$clase_binaria, p = 0.70, list = FALSE)
     train  <-  ds[in_training, ]
     test   <-  ds[-in_training, ]
     #train_sample <- tomar_muestra(train)
-    r <- modelo_rpart_ganancia(train, test, cp = cp, ms = ms, mb = mb, md = md)
+    r <- modelo_rpart_ganancia(train, test, cp = cp, ms = ms, mb = mb, md = md, threshold)
     gan <- c(gan, r)
   }
   mean(gan)
@@ -172,7 +171,7 @@ obj_fun_md_ms_mb <- function(x) {
                              , md = x$maxdepth
                              , ms = x$minsplit
                              , mb = floor(x$minsplit*x$minbucket)
-                             , cp = x$cp)
+                             , threshold = x$threshold)
 }
 
 obj_fun <- makeSingleObjectiveFunction(
@@ -182,7 +181,7 @@ obj_fun <- makeSingleObjectiveFunction(
     makeIntegerParam("maxdepth",  lower = 3L, upper = 20L),
     makeIntegerParam("minsplit",  lower = 200L, upper = 8000L),
     makeNumericParam("minbucket",  lower = 0L, upper = 1L),
-    makeNumericParam("cp",  lower = -1L, upper = 0.5)
+    makeNumericParam("threshold",  lower = 0.02, upper = 0.075),
   ),
   noisy = TRUE,
   has.simple.signature = FALSE
