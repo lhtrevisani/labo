@@ -133,12 +133,11 @@ dapply[, clase_ternaria := NULL]
 set.seed(semillas[1])
 
 ganancia <- function(probabilidades, clase, threshold = 0.025) {
-  return(sum(
-    (probabilidades >= threshold) * ifelse(clase == "evento", 78000, -2000))
+  return(sum((probabilidades >= threshold) * ifelse(clase == "evento", 78000, -2000))
   )
 }
 
-modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10, threshold = 0.025) {
+modelo_rpart_ganancia <- function(train, test, cp =  -1, ms = 20, mb = 1, md = 10, threshold = 0.025) {
   modelo <- rpart(clase_binaria ~ ., data = train,
                   xval = 0,
                   cp = cp,
@@ -147,7 +146,8 @@ modelo_rpart_ganancia <- function(train, test, cp =  0, ms = 20, mb = 1, md = 10
                   maxdepth = md)
   
   test_prediccion <- predict(modelo, test, type = "prob")
-  ganancia(test_prediccion[, "evento"], test$clase_binaria, threshold) / 0.3
+  
+  ganancia(test_prediccion[, "evento"], test$clase_binaria, threshold = threshold) / 0.3
   
 }
 
@@ -159,7 +159,7 @@ experimento_rpart_completo <- function(ds, semillas, cp = -1, ms = 20, mb = 1, m
     train  <-  ds[in_training, ]
     test   <-  ds[-in_training, ]
     #train_sample <- tomar_muestra(train)
-    r <- modelo_rpart_ganancia(train, test, cp = cp, ms = ms, mb = mb, md = md, threshold)
+    r <- modelo_rpart_ganancia(train, test, cp = cp, ms = ms, mb = mb, md = md, threshold = threshold)
     gan <- c(gan, r)
   }
   mean(gan)
@@ -179,9 +179,9 @@ obj_fun <- makeSingleObjectiveFunction(
   fn = obj_fun_md_ms_mb,
   par.set = makeParamSet(
     makeIntegerParam("maxdepth",  lower = 3L, upper = 20L),
-    makeIntegerParam("minsplit",  lower = 200L, upper = 8000L),
+    makeIntegerParam("minsplit",  lower = 1L, upper = 5000L),
     makeNumericParam("minbucket",  lower = 0L, upper = 1L),
-    makeNumericParam("threshold",  lower = 0.02, upper = 0.075),
+    makeNumericParam("threshold",  lower = 0.02, upper = 0.09),
   ),
   noisy = TRUE,
   has.simple.signature = FALSE
@@ -192,7 +192,7 @@ ctrl <- setMBOControlTermination(ctrl, iters = 100L)
 ctrl <- setMBOControlInfill(
   ctrl,
   crit = makeMBOInfillCritEI(),
-  opt = "focussearch",
+  opt = "focussearch"
   # sacar parámetro opt.focussearch.points en próximas ejecuciones
   #opt.focussearch.points = 20
 )
@@ -201,19 +201,23 @@ lrn <- makeMBOLearner(ctrl, obj_fun)
 
 surr_km <- makeLearner("regr.km", predict.type = "se", covtype = "matern3_2")
 
-run_md_ms <- mbo(obj_fun, learner = surr_km, control = ctrl, )
+run_md_ms <- mbo(obj_fun, learner = surr_km, control = ctrl)
 print(run_md_ms)
 
+prop.table(table(dapply$Predicted))
+prop.table(table(dtrain$clase_binaria))
 
 ############################################# predigo marzo ##################################################################
 
 modelo  <- rpart(formula=   "clase_binaria ~ .",  #quiero predecir clase_ternaria a partir de el resto de las variables
                  data=      dtrain,  #los datos donde voy a entrenar
                  xval=      0,
-                 cp=       -0.315,   #esto significa no limitar la complejidad de los splits
-                 minsplit=  3437,     #minima cantidad de registros para que se haga el split
-                 minbucket= 807,     #tamaño minimo de una hoja
+                 cp=       -1,   #esto significa no limitar la complejidad de los splits
+                 minsplit=  2569,     #minima cantidad de registros para que se haga el split
+                 minbucket= 642,     #tamaño minimo de una hoja
                  maxdepth=  8 )    #profundidad maxima del arbol
+
+threshold = 0.05
 
 prediccion  <- predict(object= modelo, newdata= dapply, type = "prob")
 
@@ -221,7 +225,7 @@ prediccion  <- predict(object= modelo, newdata= dapply, type = "prob")
 dapply[ , prob_baja2 := prediccion[, "evento"] ]
 
 #solo le envio estimulo a los registros con probabilidad de BAJA+2 mayor  a  1/40
-dapply[ , Predicted := as.numeric( prob_baja2 > 1/40 ) ]
+dapply[ , Predicted := as.numeric( prob_baja2 > threshold ) ]
 
 #genero el archivo para Kaggle
 #primero creo la carpeta donde va el experimento
@@ -229,7 +233,7 @@ dir.create( "./exp/" )
 dir.create( "./exp/COMP1" )
 
 fwrite( dapply[ , list(numero_de_cliente, Predicted) ], #solo los campos para Kaggle
-        file= "./exp/COMP1/K101_002.csv",
+        file= "./exp/COMP1/K101_003.csv",
         sep=  "," )
 
 
