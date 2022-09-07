@@ -107,8 +107,8 @@ dtrain[, clase_binaria := ifelse(
 )]
 
 # Borramos el target viejo
-dtrain[, clase_ternaria := NULL]
-dapply[, clase_ternaria := NULL]
+#dtrain[, clase_ternaria := NULL]
+#dapply[, clase_ternaria := NULL]
 
 ############################################ particiono en train y "validación"  ######################################################
 
@@ -133,12 +133,12 @@ dapply[, clase_ternaria := NULL]
 set.seed(semillas[1])
 
 ganancia <- function(probabilidades, clase, threshold = 0.025) {
-  return(sum((probabilidades >= threshold) * ifelse(clase == "evento", 78000, -2000))
+  return(sum((probabilidades >= threshold) * ifelse(clase == "BAJA+2", 78000, -2000))
   )
 }
 
-modelo_rpart_ganancia <- function(train, test, cp =  -1, ms = 20, mb = 1, md = 10, threshold = 0.025) {
-  modelo <- rpart(clase_binaria ~ ., data = train,
+modelo_rpart_ganancia <- function(train, test, cp = -1, ms = 20, mb = 1, md = 10, threshold = 0.025) {
+  modelo <- rpart(clase_binaria ~ . -clase_ternaria, data = train,
                   xval = 0,
                   cp = cp,
                   minsplit = ms,
@@ -147,7 +147,7 @@ modelo_rpart_ganancia <- function(train, test, cp =  -1, ms = 20, mb = 1, md = 1
   
   test_prediccion <- predict(modelo, test, type = "prob")
   
-  ganancia(test_prediccion[, "evento"], test$clase_binaria, threshold = threshold) / 0.3
+  ganancia(test_prediccion[, "evento"], test$clase_ternaria, threshold = threshold) / 0.3
   
 }
 
@@ -180,15 +180,15 @@ obj_fun <- makeSingleObjectiveFunction(
   par.set = makeParamSet(
     makeIntegerParam("maxdepth",  lower = 3L, upper = 20L),
     makeIntegerParam("minsplit",  lower = 1L, upper = 5000L),
-    makeNumericParam("minbucket",  lower = 0L, upper = 1L),
-    makeNumericParam("threshold",  lower = 0.02, upper = 0.09),
+    makeNumericParam("minbucket",  lower = 0L, upper = 0.5),
+    makeNumericParam("threshold",  lower = 0.02, upper = 0.09)
   ),
   noisy = TRUE,
   has.simple.signature = FALSE
 )
 
 ctrl <- makeMBOControl()
-ctrl <- setMBOControlTermination(ctrl, iters = 100L)
+ctrl <- setMBOControlTermination(ctrl, iters = 150L)
 ctrl <- setMBOControlInfill(
   ctrl,
   crit = makeMBOInfillCritEI(),
@@ -209,15 +209,15 @@ prop.table(table(dtrain$clase_binaria))
 
 ############################################# predigo marzo ##################################################################
 
-modelo  <- rpart(formula=   "clase_binaria ~ .",  #quiero predecir clase_ternaria a partir de el resto de las variables
+modelo  <- rpart(formula=   "clase_binaria ~ . -clase_ternaria",  #quiero predecir clase_ternaria a partir de el resto de las variables
                  data=      dtrain,  #los datos donde voy a entrenar
                  xval=      0,
                  cp=       -1,   #esto significa no limitar la complejidad de los splits
-                 minsplit=  2569,     #minima cantidad de registros para que se haga el split
-                 minbucket= 642,     #tamaño minimo de una hoja
-                 maxdepth=  8 )    #profundidad maxima del arbol
+                 minsplit=  901,     #minima cantidad de registros para que se haga el split
+                 minbucket= 207,     #tamaño minimo de una hoja
+                 maxdepth=  7 )    #profundidad maxima del arbol
 
-threshold = 0.05
+threshold = 0.0496
 
 prediccion  <- predict(object= modelo, newdata= dapply, type = "prob")
 
@@ -233,7 +233,7 @@ dir.create( "./exp/" )
 dir.create( "./exp/COMP1" )
 
 fwrite( dapply[ , list(numero_de_cliente, Predicted) ], #solo los campos para Kaggle
-        file= "./exp/COMP1/K101_003.csv",
+        file= "./exp/COMP1/K101_004.csv",
         sep=  "," )
 
 
