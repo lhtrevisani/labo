@@ -237,4 +237,29 @@ fwrite( dapply[ , list(numero_de_cliente, Predicted) ], #solo los campos para Ka
         sep=  "," )
 
 
-## cambiar punto de corte: podría ser también parte del proceso de optimización.
+########################################### pruebo con múltiples cortes ################################################################
+
+#agrego a dapply una columna nueva que es la probabilidad de BAJA+2
+dfinal  <- copy( dapply[ , list(numero_de_cliente) ] )
+dfinal[ , prob_SI := prediccion[ , "evento"] ]
+
+# por favor cambiar por una semilla propia
+# que sino el Fiscal General va a impugnar la prediccion
+set.seed(700423)  
+dfinal[ , azar := runif( nrow(dapply) ) ]
+
+# ordeno en forma descentente, y cuando coincide la probabilidad, al azar
+setorder( dfinal, -prob_SI, azar )
+
+
+for( corte  in  c( 7500, 8000, 8500, 9000, 9500, 10000, 10500, 11000 ) )
+{
+  #le envio a los  corte  mejores,  de mayor probabilidad de prob_SI
+  dfinal[ , Predicted := 0L ]
+  dfinal[ 1:corte , Predicted := 1L ]
+  
+  
+  fwrite( dfinal[ , list(numero_de_cliente, Predicted) ], #solo los campos para Kaggle
+          file= paste0( "./exp/COMP1/KA101_005_",  corte, ".csv"),
+          sep=  "," )
+}

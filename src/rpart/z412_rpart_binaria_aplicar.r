@@ -1,5 +1,5 @@
 #Aplicacion de los mejores hiperparametros encontrados en una bayesiana
-Utilizando clase_binaria =  [  SI = { "BAJA+1", "BAJA+2"} ,  NO="CONTINUA ]
+#Utilizando clase_binaria =  [  SI = { "BAJA+1", "BAJA+2"} ,  NO="CONTINUA ]
 
 #cargo las librerias que necesito
 require("data.table")
