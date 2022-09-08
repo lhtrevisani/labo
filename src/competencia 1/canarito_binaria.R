@@ -20,11 +20,15 @@ for( i in 1:30 ) dataset[ , paste0("canarito", i ) :=  runif( nrow(dataset)) ]
 dtrain <- dataset[ foto_mes==202101 ]
 dapply <- dataset[ foto_mes==202103 ]
 
-
+dtrain[, clase_binaria := ifelse(
+  clase_ternaria == "CONTINUA",
+  "noevento",
+  "evento"
+)]
 
 #Primero  veo como quedan mis arboles
 modelo_original <- rpart(
-    formula= "clase_ternaria ~ . -mcomisiones_mantenimiento -Visa_mpagado ",
+    formula= "clase_binaria ~ . -mcomisiones_mantenimiento -Visa_mpagado -clase_ternaria",
     data= dtrain,
     model= TRUE,
     xval= 0,
@@ -40,10 +44,10 @@ modelo_original <- rpart(
 modelo_original$frame[ modelo_original$frame$var %like% "canarito", "complexity"] <- -666
 modelo_pruned  <- prune(  modelo_original, -666 )
 
-prediccion  <- predict( modelo_pruned, dapply, type = "prob")[,"BAJA+2"]
+prediccion  <- predict( modelo_pruned, dapply, type = "prob")[,"evento"]
 
 entrega  <-  as.data.table( list( "numero_de_cliente"= dapply$numero_de_cliente,
-                                  "Predicted"= as.integer(  prediccion > 0.025 ) ) )
+                                  "Predicted"= as.integer(  prediccion > 0.05 ) ) )
 
 
 dir.create( "./exp/" )
