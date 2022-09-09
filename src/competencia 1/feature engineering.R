@@ -84,6 +84,16 @@ dataset[, limite_compra_sobre_activos := ifelse(dataset$total_activos == 0, NA, 
 limite_esperado = median(dataset[mpayroll_total > 0, limite_compra_total / mpayroll_total], na.rm=TRUE)
 dataset[, limite_compra_real_sobre_esperado := ifelse(dataset$total_activos == 0, NA, mpayroll_total * limite_esperado - limite_compra_total) ]
 
+
+## sumo variables visa + master
+y sobre totales puedo hacer variables de consumo / limite.
+
+
+
+
+
+
+
 ## suma de columnas null
 dataset$na_count <- apply(dataset, 1, function(x) sum(is.na(x)))
 
