@@ -357,6 +357,10 @@ surr_km <- makeLearner("regr.km", predict.type = "se", covtype = "matern3_2")
 run_md_ms <- mbo(obj_fun, learner = surr_km, control = ctrl)
 print(run_md_ms)
 
+df_parameters <- as.data.frame(run_md_ms$opt.path)
+
+df_parameters$y
+
 ############################################# predigo marzo ##################################################################
 
 modelo  <- rpart(formula=   "clase_binaria ~ . -clase_ternaria",  #quiero predecir clase_ternaria a partir de el resto de las variables
@@ -387,6 +391,8 @@ dir.create( "./exp/COMP1" )
 fwrite( dapply[ , list(numero_de_cliente, Predicted) ], #solo los campos para Kaggle
         file= "./exp/COMP1/K101_006.csv",
         sep=  "," )
+
+write.csv(df_parameters, "./exp/COMP1/K101_006_parameters.csv", row.names = FALSE)
 
 
 ########################################### pruebo con múltiples cortes ################################################################
