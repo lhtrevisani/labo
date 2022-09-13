@@ -9,9 +9,9 @@
 ## --- León Tolstoi
 
 ## Preguntas
-## - ¿Qué es un ensamble de modelos?
-## - ¿Cómo tienen que ser los modelos dentro de un ensamble?
-## - ¿Qué técnicas conoce para ensamblar modelos?
+## - ¿Qué es un ensamble de modelos? varios modelos juntos.
+## - ¿Cómo tienen que ser los modelos dentro de un ensamble? diversos!
+## - ¿Qué técnicas conoce para ensamblar modelos? cualquier modelo se puede usar en un ensamble
 ## - ¿Por qué funcionan mejor los ensambles?
 
 
@@ -47,9 +47,10 @@ require("randomForest")
 require("lightgbm")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
 dataset <- fread("./datasets/competencia2_2022.csv.gz")
@@ -62,14 +63,16 @@ enero[, clase_binaria1 := factor(ifelse(
                                 "evento",
                                 "noevento"
                             ))]
+
 enero$clase_ternaria <- NULL
+
 in_training <- caret::createDataPartition(enero$clase_binaria1,
                      p = 0.70, list = FALSE)
 
 dtrain  <-  enero[in_training, ]
 dtest   <-  enero[-in_training, ]
 
-# ranger no soporta, como lo hacen otras librerías, los missing values
+# ranger no soporta, como lo hacen otras librerías, los missing values (imputa con la mediana)
 dtrain <-  na.roughfix(dtrain)
 dtest <-  na.roughfix(dtest)
 
@@ -86,6 +89,7 @@ modelo_rf_1 <- ranger(clase_binaria1 ~ ., data = dtrain,
                   sample.fraction = 0.66,
                   importance = "impurity",
                   verbose = TRUE)
+
 t1 <- Sys.time()
 as.numeric(t1 - t0, units = "secs")
 
@@ -121,10 +125,10 @@ importancia
 
 ## Preguntas
 ## - ¿Qué significa que una variable sea más importante que otra?
-## - ¿Qué significa que una variable tenga 0 importancia?
-## - ¿Con el **RF** es suficiente como para descartarlas?
+## - ¿Qué significa que una variable tenga 0 importancia? no se usó para cortar
+## - ¿Con el **RF** es suficiente como para descartarlas? nop
 ## - ¿Qué una variable tenga algo de importancia es suficiente como para
-## - entender que da valor?
+## - entender que da valor? nop
 
 ## ---------------------------
 ## Step 5: Un experimento con pollitos
@@ -171,6 +175,10 @@ setorder(importancia3, -importancia)
 importancia3
 which(importancia3$variable == "pollito")
 
+# extratrees: en lugar de buscar todos los potenciales puntos de corte, 
+# busco n puntos de corte para una variable (le meto mucha aleatoriedad) -> canarito va mal 
+# (tamibén ayuda el min node size)
+
 ## ---------------------------
 ## Step 6: Boosting, la navaja suiza de los modelos - Conceptos
 ## ---------------------------
@@ -196,7 +204,7 @@ which(importancia3$variable == "pollito")
 ## ---------------------------
 
 # Cargamos todo para tener un código limpio
-dataset <- fread("./datasets/competencia2_2022.csv.gz")
+dataset <- fread("./datasets/competencia2_2022.csv")
 enero <- dataset[foto_mes == 202101]
 marzo <- dataset[foto_mes == 202103]
 rm(dataset)
@@ -217,7 +225,7 @@ set.seed(semillas[1])
 # LightGBM, al igual que XGB traen su implementación del CV
 # Los parámetros los iremos viendo en profundidad la siguiente clase.
 model_lgbm_cv <- lgb.cv(data = dtrain,
-         eval = ganancia_lgb,
+         eval = ganancia_lgb, # puede validar una función de ganancia personalizada
          stratified = TRUE,
          nfold = 5,
          param = list(objective = "binary",
@@ -228,7 +236,7 @@ model_lgbm_cv <- lgb.cv(data = dtrain,
       )
 
 # Mejor iteración
-model_lgbm_cv$best_iter
+model_lgbm_cv$best_iter     ## va chequeando en validación (promedio de las ganancias)
 
 # Ganancia de la mejor iteración
 unlist(model_lgbm_cv$record_evals$valid$ganancia$eval)[model_lgbm_cv$best_iter]

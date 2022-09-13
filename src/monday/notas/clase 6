@@ -1,0 +1,30 @@
+cuanto más desbalanceado está el corte de kaggle, más diferencia va a haber entre leaderbord público y privado. 
+(puede ser que en algún lado queden aquellas instancias más fáciles de separar)
+
+si hago competir dos modelos, sigue habiendo algo de suerte en el medio, pero debería suceder que en la gran mayoría de los casos gana el mejor.
+
+variación salario
+
+
+train: enero
+validation: marzo (busco hiperparam)
+test: 1, 2 y 3 vs 5
+??
+
+
+ensables: tomo varios modelos diversos.
+
+
+bagging: ensamble de árboles complejos
+
+random forest: entrenan con solo algunos datos (boostrap)
+
+EN CADA NODO, se queda solo con un subset de las features (raiz cuadrada de la cantidad de variables)
+
+extratrees: en lugar de buscar todos los potenciales puntos de corte, busco n puntos de corte para una variable (le meto mucha aleatoriedad) -> canarito va mal (tamibén ayuda el min node size)
+
+boosting: modelos mucho menor complejos. van corrigiendo errores anteriores sobre la marcha.-
+    ada boost: corrige el peso de los casos q erré (le doy más peso)
+    
+    
+ probar con la hiperparametrización
