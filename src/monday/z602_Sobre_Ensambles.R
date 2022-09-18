@@ -20,7 +20,7 @@
 
 # Sobre los segundos, veremos son los llamados Bagging (bootstrap aggregating).
 # - Hacer **N** nuevos conjunto de entrenamiento usando boostraping, o sea,
-#   reemplazar nuestro dataset por elementos aleatorios con reemplazo.
+#   reemplazar nuestro dataset por elementos aleatorios con reposición
 # - Para este cada nuevo dataset obtener un modelo.
 # - Promediar (o votar) las salidas de los modelos.
 
@@ -53,7 +53,7 @@ setwd("/home/lucas/Maestria/DMEyF")
 semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
-dataset <- fread("./datasets/competencia2_2022.csv.gz")
+dataset <- fread("./datasets/competencia2_2022.csv")
 enero <- dataset[foto_mes == 202101]
 marzo <- dataset[foto_mes == 202103]
 
@@ -66,8 +66,7 @@ enero[, clase_binaria1 := factor(ifelse(
 
 enero$clase_ternaria <- NULL
 
-in_training <- caret::createDataPartition(enero$clase_binaria1,
-                     p = 0.70, list = FALSE)
+in_training <- caret::createDataPartition(enero$clase_binaria1, p = 0.70, list = FALSE)
 
 dtrain  <-  enero[in_training, ]
 dtest   <-  enero[-in_training, ]
@@ -117,8 +116,8 @@ print(sum((pred_test$predictions[, "evento"] >= 0.025) * ifelse(
 ## Step 4: Importancia de variables
 ## ---------------------------
 
-importancia <- as.data.table(modelo_rf_1$variable.importance,
-                    keep.rownames = TRUE)
+importancia <- as.data.table(modelo_rf_1$variable.importance, keep.rownames = TRUE)
+
 colnames(importancia) <- c("variable", "importancia")
 setorder(importancia, -importancia)
 importancia
@@ -145,8 +144,7 @@ modelo_rf_2 <- ranger(clase_binaria1 ~ ., data = dtrain,
                   importance = "impurity",
                   verbose = TRUE)
 
-importancia2 <- as.data.table(modelo_rf_2$variable.importance,
-                    keep.rownames = TRUE)
+importancia2 <- as.data.table(modelo_rf_2$variable.importance, keep.rownames = TRUE)
 colnames(importancia2) <- c("variable", "importancia")
 setorder(importancia2, -importancia)
 importancia2
@@ -168,8 +166,7 @@ modelo_rf_3 <- ranger(clase_binaria1 ~ ., data = dtrain,
                   importance = "impurity",
                   verbose = TRUE)
 
-importancia3 <- as.data.table(modelo_rf_3$variable.importance,
-                    keep.rownames = TRUE)
+importancia3 <- as.data.table(modelo_rf_3$variable.importance, keep.rownames = TRUE)
 colnames(importancia3) <- c("variable", "importancia")
 setorder(importancia3, -importancia)
 importancia3
@@ -184,8 +181,7 @@ which(importancia3$variable == "pollito")
 ## ---------------------------
 
 # Estos se construyen de forma serial.
-# Primero se parte de un modelo (que puede ser un valor constante) y se
-# complementa con un modelo que busca mejorar al anterior.
+# Primero se parte de un modelo (que puede ser un valor constante) y se complementa con un modelo que busca mejorar al anterior.
 
 # Hay dos algoritmos muy conocidos de este tipo:
 
@@ -193,8 +189,7 @@ which(importancia3$variable == "pollito")
 # peso mayor en los casos donde la clasificación es incorrecta
 
 # **Gradient Boosting**: Que cada nuevo modelo va mejorando los anteriores,
-# tratando de corregir los residuos, buscando estos últimos con el gradiente
-# de una función de perdida.
+# tratando de corregir los residuos, buscando estos últimos con el gradiente de una función de perdida.
 
 # Este último se empezó a hacer muy popular por la excelente pieza de tecnología
 # que es su implementación **xgboost**, superado luego por el LightGBM.
@@ -222,6 +217,7 @@ ganancia_lgb <- function(probs, datos) {
 }
 
 set.seed(semillas[1])
+
 # LightGBM, al igual que XGB traen su implementación del CV
 # Los parámetros los iremos viendo en profundidad la siguiente clase.
 model_lgbm_cv <- lgb.cv(data = dtrain,
@@ -260,8 +256,7 @@ lgb.importance(model_lgm, percentage = TRUE)
 marzo$pred <- predict(model_lgm, data.matrix(marzo[, 1:154]))
 
 # TOTAL
-sum((marzo$pred > 0.025) *
-            ifelse(marzo$clase_ternaria == "BAJA+2", 78000, -2000))
+sum((marzo$pred > 0.025) * ifelse(marzo$clase_ternaria == "BAJA+2", 78000, -2000))
 
 # Sobre 100 LB
 leaderboad <- data.table()
