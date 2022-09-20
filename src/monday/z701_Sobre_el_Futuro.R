@@ -23,12 +23,13 @@ require("ggplot2")
 require("lightgbm")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
-dataset <- fread("./datasets/competencia2_2022.csv.gz")
+dataset <- fread("./datasets/competencia2_2022.csv")
 enero <- dataset[foto_mes == 202101]
 marzo <- dataset[foto_mes == 202103]
 
@@ -65,6 +66,8 @@ sum((marzo$pred > 0.025) * ifelse(marzo$clase_ternaria == "BAJA+2", 78000, -2000
 
 length(marzo$pred)
 length(unique(marzo$pred))
+
+# prácticamente todos los scores son distintos. es importante buscar el punto de corte
 
 ## Preguntas
 ## - ¿Qué diferencia observa con respecto a ?
@@ -105,8 +108,10 @@ t <- 12000
 
 leaderboad <- data.table()
 split <- caret::createDataPartition(marzo$clase_ternaria, p = 0.50, list = FALSE)
+
 marzo$board[split] <- "privado"
 marzo$board[-split] <- "publico"
+
 for (s in seq(f, t, m)) {
     privado <- marzo[1:s, sum(ifelse(board == "privado",
         ifelse(clase_ternaria == "BAJA+2", 78000, -2000), 0)) / 0.5]
@@ -116,11 +121,15 @@ for (s in seq(f, t, m)) {
                         data.table(envio = s, board = "privado", valor = privado),
                         data.table(envio = s, board = "publico", valor = publico)
                         ))
+    
 }
+
 # Graficamos
+
+ggplot(leaderboad[board == "publico", ], aes(x = envio, y = valor, color = board)) + geom_line()
+
 ggplot(leaderboad, aes(x = envio, y = valor, color = board)) + geom_line()
 
 ## ACTIVE LEARNING: Juegue con los parámetros y busque si hay alguna información
 ## en el leaderboard público que le de una estrategia para elegir la cantidad
 ## adecuada para ganar maximizar la ganancia del privado.
-

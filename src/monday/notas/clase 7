@@ -1,0 +1,23 @@
+data drifting: la distribución de una variable cambia a lo largo del tiempo. ej: monto en $ de una variable económica.
+(en este caso mucho no impacta en el resultado de modelo)
+
+posible solución al data drifting: rankear variables (binarizar)
+
+concept drifting: variables que siguen existiendo, pero fueron perdiendo importancia de cara a la predicción.
+(cambio que se da en un fenómeno de cara a las variables que lo explican)
+ej: llamados a linea fija fue perdiendo peso con el correr del tiempo. y paquete de datos fue creciendo.
+
+posible solución al concept drifting: entrenar nuevamente el modelo.
+
+
+si las variables con gran data drifting no son importantes, sacarlas.
+
+
+701. truco para "hackear" kaggle. como peudo definir el punto de corte usando la info de enero y marzo.
+
+cuando se cae el público después de un pico, significa que los baja de menor calidad q están en el límite están cayendo en el privado.
+
+--------------------------------------------------------
+light gbm
+
+

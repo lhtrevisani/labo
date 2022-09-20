@@ -20,12 +20,13 @@ require("ggplot2")
 require("lightgbm")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
-dataset <- fread("./datasets/competencia2_2022.csv.gz")
+dataset <- fread("./datasets/competencia2_2022.csv")
 marzo <- dataset[foto_mes == 202103]
 rm(dataset)
 
@@ -41,12 +42,14 @@ dtrain  <- lgb.Dataset(data   = data.matrix(marzo),
 
 # Veremos en detalle esta función un poco más adelante
 ganancia_lgbm  <- function(probs, datos) {
+  
     ## Ingresar su estrategia! acá vamos a ir simplemente buscando la máxima gan de la curva.
     gan <- data.table("pred" = probs,
                                                                  # truco para separar las clases
                     "gan" = ifelse(getinfo(datos, "label") == 1 & getinfo(datos, "weight") > 1, 78000, -2000))
+    
     setorder(gan, -pred)
-    gan[, gan_acum :=  cumsum(gan)]
+    gan[, gan_acum :=  cumsum(gan)]         # me estoy quedando con el de mayor ganancia, independientemente del punto de corte. podría buscar optimizar punto de corte (¿o es mucho laburo?)
     return(list("name" = "ganancia",
                     "value" = gan[, max(gan_acum)] / 0.2,
                     "higher_better" = TRUE))
@@ -70,7 +73,7 @@ model_lgbm_cv <- lgb.cv(
     stratified = TRUE,
 
     # Función que va a ser evaluada.
-    eval = ganancia_lgbm,
+    eval = ganancia_lgbm,    # al lightGBM ya le puedo pasar mi ganancia.
 
     # Veremos algunos, pero hay muchos más https://lightgbm.readthedocs.io/en/v3.3.2/Parameters.html
     param = list(
@@ -79,7 +82,7 @@ model_lgbm_cv <- lgb.cv(
         # - feature_fraction_seed
         seed= semillas[1],
 
-        # Definimos que tipo de problema vamos a resolver. De esta forma sabe que loss function utilizar.
+        # Definimos que tipo de problema vamos a resolver. De esta forma sabe que loss function utilizar (NO TOCAR)
         objective = "binary",
         # Que función va a usar para evaluar, en este caso es la que le pasamos en **eval**
         # cuenta con una gran cantidad de funciones por out-of-the-box.
@@ -91,29 +94,30 @@ model_lgbm_cv <- lgb.cv(
         # Valores del primer árbol usando el valor de la media de las clases. Ahorra quizás, 3 árboles (?)
         boost_from_average = TRUE,
 
+        # todo lo de arriba no cambia tanto, no es necesario probar todo.
         # Un parámetro más que importante! LightGBM bindea automaticamente las variables
         # Hace que las variables pesen menos en memoria
         # Hace más rápido en su ejecución
         # Hace más robusto la predicción
-        max_bin = 31,
+        max_bin = 31,       #imp, aunque por ahora, dejarlo fijo.
 
         # Por default puede trabajar con missing. Pero siempre hay un alumno talibán.
         use_missing = TRUE,
 
-        # Variables de crecimiento del árbol.
-        max_depth = 12, # -1 = No limitar
-        min_data_in_leaf = 4000,
-        feature_pre_filter = FALSE, #feature_pre_filter: Evita que LightGBM deje de lado variables que considera malas.
+        # Variables de crecimiento del árbol (TOCAR).
+        max_depth = 12, # -1 = No limitar  (se podría probar con no limitarlo)
+        min_data_in_leaf = 4000,   # similar al min bucket de rpart
+        feature_pre_filter = FALSE, #feature_pre_filter: Evita que LightGBM deje de lado variables que considera malas (no tocar)
         num_leaves = 100,
 
         # Parámetros que fueron sacados de los rf porque lo que anda se mete:
         feature_fraction = 0.50, # Porcentaje de columnas que van a usarse en un árbol
-        # feature_fraction_bynode si queremos que sea por nodo
+        # feature_fraction_bynode si queremos que sea por nodo (así funciona el random forest)
         bagging_fraction = 1.0, # % de registros a considerar en cada árbol
         extra_tree = FALSE, # Los puntos de corte los elige al azar.
 
         # Parámetros de las famosas regularizaciones!!
-        lambda_l1 = 0.0,
+        lambda_l1 = 0.0,  #0, no regulariza
         lambda_l2 = 0.0,
         min_gain_to_split = 0.0,
 
@@ -121,7 +125,7 @@ model_lgbm_cv <- lgb.cv(
         learning_rate =  0.01,
 
         # Cuántos árboles vamos a generar
-        num_iterations = 100, # Debe ser un número muy grande, recordar el double descent!!!.
+        num_iterations = 100, # Debe ser un número muy grande, recordar el double descent!!!. 500 está ok
         early_stopping_rounds = 100 # Corta cuando después de tantos árboles no vio una ganancia mejor a la máxima.
     ),
     verbose = -1
@@ -146,12 +150,14 @@ model_lgm <- lightgbm(
         num_leaves = 100,
         feature_fraction = 0.50,
         learning_rate = 0.01,
-        num_iterations = model_lgbm_cv$best_iter
+        num_iterations = model_lgbm_cv$best_iter    # quizás una vez que optimice los parámetros, podría subir este número, no cambia nada.
     ),
     verbose = -1
 )
 
 lgb.importance(model_lgm)
+
+# podría probar q sucede saacndo las mejores variables -> spoiler, el modelo sigue funcando bien!!
 
 ## ACTIVIDAD para la clase: Armar una Opt. Bayesiana para el LightGBM.
 ## Empezaran a recibir cada vez más soporte de código, algo que en la vida de
