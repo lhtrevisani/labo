@@ -16,9 +16,9 @@ require("lightgbm")
 #defino los parametros de la corrida, en una lista, la variable global  PARAM
 #  muy pronto esto se leera desde un archivo formato .yaml
 PARAM <- list()
-PARAM$experimento  <- "KA7240"
+PARAM$experimento  <- "COMP2"
 
-PARAM$input$dataset       <- "./datasets/competencia2_2022.csv.gz"
+PARAM$input$dataset       <- "./datasets/dataset_7110.csv"
 PARAM$input$training      <- c( 202103 )
 PARAM$input$future        <- c( 202105 )
 
@@ -28,21 +28,20 @@ PARAM$finalmodel$num_iterations    <-    328  #615
 PARAM$finalmodel$num_leaves        <-   1015  #784
 PARAM$finalmodel$min_data_in_leaf  <-   5542  #5628
 PARAM$finalmodel$feature_fraction  <-      0.7832319551  #0.8382482539
-PARAM$finalmodel$semilla           <- 102191
+PARAM$finalmodel$semilla           <- 102191   ## mandé submission con esta seed, me olvidé de cambiarla
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #Aqui empieza el programa
-setwd( "~/buckets/b1" )
+setwd( "/home/lucas/Maestria/DMEyF" )   ## google cloud: "~/buckets/b1"
 
 #cargo el dataset donde voy a entrenar
 dataset  <- fread(PARAM$input$dataset, stringsAsFactors= TRUE)
 
-
 #--------------------------------------
 
 #paso la clase a binaria que tome valores {0,1}  enteros
-#set trabaja con la clase  POS = { BAJA+1, BAJA+2 } 
+#se trabaja con la clase  POS = { BAJA+1, BAJA+2 } 
 #esta estrategia es MUY importante
 dataset[ , clase01 := ifelse( clase_ternaria %in%  c("BAJA+2","BAJA+1"), 1L, 0L) ]
 
@@ -53,7 +52,6 @@ campos_buenos  <- setdiff( colnames(dataset), c("clase_ternaria","clase01") )
 
 #--------------------------------------
 
-
 #establezco donde entreno
 dataset[ , train  := 0L ]
 dataset[ foto_mes %in% PARAM$input$training, train  := 1L ]
@@ -62,11 +60,10 @@ dataset[ foto_mes %in% PARAM$input$training, train  := 1L ]
 #creo las carpetas donde van los resultados
 #creo la carpeta donde va el experimento
 # HT  representa  Hiperparameter Tuning
+
 dir.create( "./exp/",  showWarnings = FALSE ) 
 dir.create( paste0("./exp/", PARAM$experimento, "/" ), showWarnings = FALSE )
 setwd( paste0("./exp/", PARAM$experimento, "/" ) )   #Establezco el Working Directory DEL EXPERIMENTO
-
-
 
 #dejo los datos en el formato que necesita LightGBM
 dtrain  <- lgb.Dataset( data= data.matrix(  dataset[ train==1L, campos_buenos, with=FALSE]),
@@ -87,6 +84,7 @@ modelo  <- lgb.train( data= dtrain,
                     )
 
 #--------------------------------------
+
 #ahora imprimo la importancia de variables
 tb_importancia  <-  as.data.table( lgb.importance(modelo) ) 
 archivo_importancia  <- "impo.txt"
@@ -102,8 +100,7 @@ fwrite( tb_importancia,
 dapply  <- dataset[ foto_mes== PARAM$input$future ]
 
 #aplico el modelo a los datos nuevos
-prediccion  <- predict( modelo, 
-                        data.matrix( dapply[, campos_buenos, with=FALSE ])                                 )
+prediccion  <- predict( modelo, data.matrix( dapply[, campos_buenos, with=FALSE ]) )
 
 #genero la tabla de entrega
 tb_entrega  <-  dapply[ , list( numero_de_cliente, foto_mes ) ]
