@@ -23,12 +23,13 @@ PARAM$input$training      <- c( 202103 )
 PARAM$input$future        <- c( 202105 )
 
 PARAM$finalmodel$max_bin           <-     31
-PARAM$finalmodel$learning_rate     <-      0.0280015981   #0.0142501265
-PARAM$finalmodel$num_iterations    <-    328  #615
-PARAM$finalmodel$num_leaves        <-   1015  #784
-PARAM$finalmodel$min_data_in_leaf  <-   5542  #5628
-PARAM$finalmodel$feature_fraction  <-      0.7832319551  #0.8382482539
-PARAM$finalmodel$semilla           <- 102191   ## mandé submission con esta seed, me olvidé de cambiarla
+PARAM$finalmodel$learning_rate     <-      0.02550992   #0.0142501265
+PARAM$finalmodel$num_iterations    <-    302  #615
+PARAM$finalmodel$num_leaves        <-   320  #784
+PARAM$finalmodel$min_data_in_leaf  <-   1902  #5628
+PARAM$finalmodel$feature_fraction  <-      0.529888518511255  #0.8382482539
+PARAM$finalmodel$semilla           <- 700423   ## mandé submission con esta seed, me olvidé de cambiarla
+PARAM$finalmodel$envios           <- 8579   ## mandé submission con esta seed, me olvidé de cambiarla
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -127,6 +128,15 @@ for( envios  in  cortes )
           file= paste0(  PARAM$experimento, "_", envios, ".csv" ),
           sep= "," )
 }
+
+corte_optimo = PARAM$finalmodel$envios
+
+tb_entrega[  , Predicted := 0L ]
+tb_entrega[ 1:corte_optimo, Predicted := 1L ]
+
+fwrite( tb_entrega[ , list(numero_de_cliente, Predicted)], 
+        file= paste0(  PARAM$experimento, "_", corte_optimo, ".csv" ),
+        sep= "," )
 
 #--------------------------------------
 
