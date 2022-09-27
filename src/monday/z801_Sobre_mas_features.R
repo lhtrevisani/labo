@@ -17,14 +17,16 @@ require("rpart")
 require("ggplot2")
 require("lightgbm")
 require("xgboost")
+require("DiagrammeR")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/aleb/dmeyf2022")
+setwd("/home/lucas/Maestria/DMEyF")
+
 # Poner sus semillas
-semillas <- c(17, 19, 23, 29, 31)
+semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
-dataset <- fread("./datasets/competencia2_2022.csv.gz")
+dataset <- fread("./datasets/competencia2_2022.csv")
 marzo <- dataset[foto_mes == 202103]
 mayo <- dataset[foto_mes == 202105]
 rm(dataset)
@@ -65,8 +67,7 @@ colnames(new_features)[150:173]
 ## Step 4: Entendiendo como se construyen.
 ## ---------------------------
 
-xgb.plot.tree(colnames(new_features), xgb_model, trees = 0)
-
+xgb.plot.tree(colnames(new_features), xgb_model, trees = 1)
 
 ## ---------------------------
 ## Step 5: Viendo cuán importantes son las nuevas variables, pero con un LGBM!!!
@@ -89,6 +90,8 @@ lgb.importance(mlgb)
 
 ## ---------------------------
 ## Step 6: Jugando un poco más con los parámetros del XGBoost
+## con esta parametría de alguna forma estoy emulando un random forest.
+## estoy generandom muchísimas más features q en el modelo anterior.
 ## ---------------------------
 
 set.seed(semillas[1])
@@ -171,3 +174,5 @@ idx[list_canaritos]
 # En que posiciones aprecieron el resto de las variables generadas
 list_new_features <- grepl("V\\d+", var_importance)
 idx[list_new_features]
+
+

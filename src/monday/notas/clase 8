@@ -1,0 +1,36 @@
+clase 8:
+
+- eliminar variables intrascendentes con alto data drifting. ¿es necesario? solo si cambia mucho la distribución
+- ¿crear variables con xgboost? sí
+- probar mejor modelo en enero (OB acá) - marzo (mido performance acá) y más o menos por donde van los hiperparámetros y después sí ir a marzo/mayo. otra opción es probar los hiperparámetros óptimos en enero/marzo emulando un score público/privado y comparando con mis submissions.
+- probar con cloud ¿xgboost?.
+- agregar deuda / activos
+- subir cant iteraciones (achicar rangos).
+- ¿log scale en el rango de hiperparámetros? -> solo para hiperparámetros q un cambio chico no es tan sensible. tiene sentido en la optimización bayesiana? capaz q en el learning rate podría andar.
+
+######################################################################################
+
+correr file de R por consola (probar en cloud):
+> nohup Rscript nombredelarchivo.R &> salida.log &
+(devuelve un process id)
+
+>top 
+(reviso procesos corriendo)
+
+>less salida.log
+(reviso la salida del script, con shift+g voy a lo último que se ejecutó)
+
+#########################################################################################
+
+uso de github:
+
+hacer el sync desde github.com es más fácil
+una vez sincronizado, para traer el repo actualizado, hacer git pull en la carpeta q corresponde.
+
+realizo todos los cambios q quiera
+git status: te muestra qué cambios se hicieron
+git add: sube los archivos.
+git commit -m "blabla changes": realizo el commit.
+git push: subo cambios a github.com
+
+en cloud, hago el git pull para traer los últimos cambios.
