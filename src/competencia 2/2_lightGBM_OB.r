@@ -30,10 +30,10 @@ options(error = function() {
 
 #Aqui se cargan los hiperparametros
 hs <- makeParamSet( 
-         makeNumericParam("learning_rate",    lower=    0.005, upper=    0.3),
-         makeNumericParam("feature_fraction", lower=    0.2  , upper=    1.0),
-         makeIntegerParam("min_data_in_leaf", lower=    0L   , upper=  8000L),
-         makeIntegerParam("num_leaves",       lower=   16L   , upper=  1024L),
+         makeNumericParam("learning_rate",    lower=    0.005, upper=    0.15),
+         makeNumericParam("feature_fraction", lower=    0.4  , upper=    0.8),
+         makeIntegerParam("min_data_in_leaf", lower=    1000L   , upper=  8000L),
+         makeIntegerParam("num_leaves",       lower=   200L   , upper=  1024L),
          makeIntegerParam("envios",           lower= 5000L   , upper= 15000L)
         )
 
@@ -43,13 +43,13 @@ PARAM  <- list()
 
 PARAM$experimento  <- "COMP2"
 
-PARAM$input$dataset       <- "./datasets/dataset_7110.csv"
+PARAM$input$dataset       <- "./datasets/dataset_7111.csv"
 PARAM$input$training      <- c( 202103 )
 
 PARAM$trainingstrategy$undersampling  <-  1.0   # un undersampling de 0.1  toma solo el 10% de los CONTINUA
 PARAM$trainingstrategy$semilla_azar   <- 700423  #Aqui poner la propia semilla
 
-PARAM$hyperparametertuning$iteraciones <- 100
+PARAM$hyperparametertuning$iteraciones <- 250
 PARAM$hyperparametertuning$xval_folds  <- 5
 PARAM$hyperparametertuning$POS_ganancia  <- 78000
 PARAM$hyperparametertuning$NEG_ganancia  <- -2000
@@ -187,7 +187,7 @@ EstimarGanancia_lightgbm  <- function( x )
 #Aqui empieza el programa
 
 #Aqui se debe poner la carpeta de la computadora local
-setwd("/home/lucas/Maestria/DMEyF")   #Establezco el Working Directory   para ckoud: "~/buckets/b1/"
+setwd("~/buckets/b1/")   #Establezco el Working Directory   para ckoud: "~/buckets/b1/"
 
 #cargo el dataset donde voy a entrenar el modelo
 dataset  <- fread( PARAM$input$dataset )
@@ -267,8 +267,8 @@ if( !file.exists( kbayesiana ) ) {
   run  <- mboContinue( kbayesiana )   #retomo en caso que ya exista
 }
 
-df_parameters <- as.data.frame(opt.state$opt.path)
-df_parameters[which.max(df_parameters$y),]
+#df_parameters <- as.data.frame(opt.state$opt.path)
+#df_parameters[which.max(df_parameters$y),]
 
 quit( save="no" )
 
