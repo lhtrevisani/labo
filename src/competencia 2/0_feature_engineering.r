@@ -18,7 +18,7 @@ options(error = function() {
 })
 
 
-setwd( "/home/lucas/Maestria/DMEyF" )   #en cloud: "~/buckets/b1/"
+setwd( "~/buckets/b1/" )   #en cloud: "~/buckets/b1/" "/home/lucas/Maestria/DMEyF"
 
 #cargo el dataset
 dataset  <- fread( "./datasets/competencia2_2022.csv")
