@@ -10,13 +10,13 @@ require("xgboost")
 require("DiagrammeR")
 
 # Poner la carpeta de la materia de SU computadora local
-setwd("/home/lucas/Maestria/DMEyF")
+setwd("~/Downloads")
 
 # Poner sus semillas
 semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
-dataset <- fread("./datasets/dataset_7110.csv")
+dataset <- fread("./dataset_7110.csv")
 marzo <- dataset[foto_mes == 202103]
 
 # Clase BAJA+1 y BAJA+2 juntas
@@ -45,7 +45,8 @@ param_fe <- list(
 xgb_model <- xgb.train(params = param_fe, data = dtrain, nrounds = 1)
 
 # agrego algunos canaritos para ver qué variables de las creadas pueden ser relevantes
-set.seed(semillas[1])
+
+set.seed(semillas[2])
 
 for (i in 1:20)  {
   marzo[, paste0("canarito", i) := runif(nrow(marzo))]
@@ -85,25 +86,31 @@ var_utiles = var_importance[1:mejor_canarito][id_var_utiles]
 rm(marzo)
 rm(new_features)
 
+# agrego canaritos al dataset completo para poder aplicar el create features
+
+set.seed(semillas[3])
+
+for (i in 1:20)  {
+  dataset[, paste0("canarito", i) := runif(nrow(dataset))]
+}
+
 new_features_full_dataset <- xgb.create.features(model = xgb_model, data.matrix(dataset))
 dataset = as.data.frame(as.matrix(new_features_full_dataset))
-
 rm(new_features_full_dataset)
-dataset$clase_ternaria = clase_real
-
-  
-## elimino los canaritos y las variables del RF que no aportan nada
 
 ## vuelvo a agregar la clase ternaria
+dataset$clase_ternaria = clase_real
+
+## elimino los canaritos
+dataset <- dataset[,!grepl("canarito", colnames(dataset))]
+
+## elimino las variables del RF que no aportan nada
+cols_to_erase = setdiff(names(dataset[,grepl("V\\d+", colnames(dataset))]), var_utiles)
+
+dataset = dataset[, ! colnames(dataset) %in% cols_to_erase]
 
 ## guardo los cambios al dataset
-
-
-
-
-
-#grabo el dataset
 fwrite( dataset,
-        "./datasets/dataset_7110.csv",
+        "./dataset_7110.csv",
         logical01= TRUE,
         sep= "," )
