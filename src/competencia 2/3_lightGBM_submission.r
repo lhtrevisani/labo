@@ -18,18 +18,19 @@ require("lightgbm")
 PARAM <- list()
 PARAM$experimento  <- "COMP2"
 
-PARAM$input$dataset       <- "./datasets/dataset_7110.csv"
+PARAM$input$dataset       <- "./datasets/dataset_7111.csv"
 PARAM$input$training      <- c( 202103 )
 PARAM$input$future        <- c( 202105 )
 
-PARAM$finalmodel$max_bin           <-     31
-PARAM$finalmodel$learning_rate     <-      0.02550992   #0.0142501265
-PARAM$finalmodel$num_iterations    <-    302  #615
-PARAM$finalmodel$num_leaves        <-   320  #784
-PARAM$finalmodel$min_data_in_leaf  <-   1902  #5628
-PARAM$finalmodel$feature_fraction  <-      0.529888518511255  #0.8382482539
-PARAM$finalmodel$semilla           <- 700423   ## mandé submission con esta seed, me olvidé de cambiarla
-PARAM$finalmodel$envios           <- 8579   ## mandé submission con esta seed, me olvidé de cambiarla
+
+PARAM$finalmodel$max_bin           <-     31 #31
+PARAM$finalmodel$learning_rate     <-      0.0456747808243314 #0.0290230171783233
+PARAM$finalmodel$num_iterations    <-    190  #270
+PARAM$finalmodel$num_leaves        <-   745  #266
+PARAM$finalmodel$min_data_in_leaf  <-   1068  #1525
+PARAM$finalmodel$feature_fraction  <- 0.410604240882606  #0.40017212427456
+PARAM$finalmodel$semilla           <- 700423   ## 
+PARAM$finalmodel$envios           <- 8432   ## 8267
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -118,7 +119,7 @@ setorder( tb_entrega, -prob )
 
 #genero archivos con los  "envios" mejores
 #deben subirse "inteligentemente" a Kaggle para no malgastar submits
-cortes <- seq( 5000, 12000, by=500 )
+cortes <- seq( 6000, 10000, by=250 )
 for( envios  in  cortes )
 {
   tb_entrega[  , Predicted := 0L ]
