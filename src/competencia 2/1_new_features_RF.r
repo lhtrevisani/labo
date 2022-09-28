@@ -16,7 +16,7 @@ setwd("~/buckets/b1/")
 semillas <- c(700423, 700429, 700433, 700459, 700471)
 
 # Cargamos los datasets y nos quedamos solo con 202101 y 202103
-dataset <- fread(".datasets/dataset_7110.csv")
+dataset <- fread("./datasets/dataset_7110.csv")
 marzo <- dataset[foto_mes == 202103]
 
 # Clase BAJA+1 y BAJA+2 juntas
@@ -111,6 +111,6 @@ dataset = dataset[, ! colnames(dataset) %in% cols_to_erase]
 
 ## guardo los cambios al dataset
 fwrite( dataset,
-        ".datasets/dataset_7111.csv",
+        "./datasets/dataset_7111.csv",
         logical01= TRUE,
         sep= "," )
