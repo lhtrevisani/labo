@@ -1,0 +1,31 @@
+¿qué información me aporta trabajar con varios meses?
+
+evolutivo de bajas+2?
+analisis de tendencia, componente estacional
+
+searching: ¿cuál es el mejor mes para buscar los mejores hp? -> ojo que también existe el over-searching.
+
+medias móviles de meses anteriores.
+deltas
+lag (creo feature con valor de la variabe para el mes previo, año previo - tmb delta)
+beta de una regresión (tendencia)
+aceleración (deriv segunda)
+max-min
+row_number de determinada variable para un mismo cliente (percentil de esa var para ese cliente ult meses)
+
+¿a qué variables le aplico esto? ¿a todo?
+
+¿entreno con más de un mes? ¿un año? ¿entreno con todos los marzos?
+-> ojo q tenemos un limitante técnico
+-> ojo con el concept drifting.
+-> ojo con la pandemia, ¿la saco? volarla. ojo con deltas, medias, etc.
+
+para reducir cap computo
+undersampling de continuas. quedarse con los continua puros quizás sirve, excluir baja+3,baja+4, etc.
+walk forward validation: solo valido con un mes futuro.
+
+ajustamos x infla? se arregla con el rankeo?
+
+canaritos para seleccionar variables.
+
+
