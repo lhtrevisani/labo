@@ -21,9 +21,9 @@ PARAM$experimento  <- "DR9141"
 PARAM$exp_input  <- "CA9060"
 
 #valores posibles  "ninguno" "rank_simple" , "rank_cero_fijo" , "deflacion"
-PARAM$metodo  <- "deflacion"
-# FIN Parametros del script
+PARAM$metodo  <- "rank_cero_fijo"
 
+# FIN Parametros del script
 
 #------------------------------------------------------------------------------
 #Esta es la parte que los alumnos deben desplegar todo su ingenio
@@ -55,7 +55,7 @@ AgregarVariables  <- function( dataset )
                                           ifelse( is.na(Master_status), 10, Master_status), 
                                           Visa_status)  ]
 
-  dataset[ , mv_status07       := ifelse( is.na(Master_status), 
+  dataset[ , vm_status07       := ifelse( is.na(Master_status), 
                                           ifelse( is.na(Visa_status), 10, Visa_status), 
                                           Master_status)  ]
 
@@ -185,21 +185,21 @@ AgregarVariables  <- function( dataset )
   dataset[, visa_alta := floor(dataset$Visa_fechaalta/365)]
 
   ## limite de compra promedio
-  dataset[, limite_compra_promedio := ifelse(dataset$ctarjetas == 0, 0, mv_mlimitecompra / ctarjetas) ]
+  dataset[, promedio_limite_compra := ifelse(dataset$ctarjetas == 0, 0, vm_mlimitecompra / ctarjetas) ]
 
   # pagado sobre saldo
-  dataset[, pagado_sobre_saldo := ifelse(dataset$mv_msaldototal == 0, 0, mv_mpagado / mv_msaldototal) ]
+  dataset[, pagado_sobre_saldo := ifelse(dataset$vm_msaldototal == 0, 0, vm_mpagado / vm_msaldototal) ]
 
   # consumo promedio
-  dataset[, consumo_promedio := ifelse(dataset$mv_cconsumos == 0, 0, mv_mconsumototal /  mv_cconsumos) ]
+  dataset[, promedio_consumo := ifelse(dataset$vm_cconsumos == 0, 0, vm_mconsumototal /  vm_cconsumos) ]
 
   ## limite de compra sobre ingresos
-  dataset[, limite_compra_sobre_ingresos := ifelse(dataset$mpayroll_total == 0, NA, mv_mlimitecompra / mpayroll_total) ]
-  dataset[, limite_compra_sobre_activos := ifelse(dataset$total_activos == 0, NA, mv_mlimitecompra / total_activos) ]
+  dataset[, limite_compra_sobre_ingresos := ifelse(dataset$mpayroll_total == 0, NA, vm_mlimitecompra / mpayroll_total) ]
+  dataset[, limite_compra_sobre_activos := ifelse(dataset$total_activos == 0, NA, vm_mlimitecompra / total_activos) ]
 
   ## limite de compra real vs esperado según ingreso
-  limite_esperado = median(dataset[mpayroll_total > 0, mv_mlimitecompra / mpayroll_total], na.rm=TRUE)
-  dataset[, limite_compra_real_sobre_esperado := ifelse(dataset$total_activos == 0, NA, mpayroll_total * limite_esperado - mv_mlimitecompra) ]
+  limite_esperado = median(dataset[mpayroll_total > 0, vm_mlimitecompra / mpayroll_total], na.rm=TRUE)
+  dataset[, limite_compra_real_sobre_esperado := ifelse(dataset$total_activos == 0, NA, mpayroll_total * limite_esperado - vm_mlimitecompra) ]
 
   ## suma de columnas null
   dataset$na_count <- rowSums(is.na(dataset))  
@@ -228,6 +228,7 @@ AgregarVariables  <- function( dataset )
   }
 
 }
+
 #------------------------------------------------------------------------------
 #deflaciona por IPC
 #momento 1.0  31-dic-2020 a las 23:59
@@ -290,22 +291,24 @@ drift_rank_cero_fijo  <- function( campos_drift )
     dataset[ , (campo) := NULL ]
   }
 }
+
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #Aqui comienza el programa
 
-setwd("~/buckets/b1")
+setwd("~/buckets/b1")   #cloud: "~/buckets/b1"  #local: "~/Documents/Maestria"
 
 #cargo el dataset donde voy a entrenar
 #esta en la carpeta del exp_input y siempre se llama  dataset.csv.gz
 dataset_input  <- paste0( "./exp/", PARAM$exp_input, "/dataset.csv.gz" )
 dataset  <- fread( dataset_input )
 
+## pruebo las funciones con una muestra, después elimino esto en cloud:
+## dataset <- dataset[sample(1:nrow(dataset), 100000, replace=FALSE),]
+
 #creo la carpeta donde va el experimento
 dir.create( paste0( "./exp/", PARAM$experimento, "/"), showWarnings = FALSE )
 setwd(paste0( "./exp/", PARAM$experimento, "/"))   #Establezco el Working Directory DEL EXPERIMENTO
-
-
 
 #primero agrego las variables manuales
 AgregarVariables( dataset )
@@ -315,10 +318,11 @@ setorder( dataset, foto_mes, numero_de_cliente )
 
 #por como armé los nombres de campos, estos son los campos que expresan variables monetarias
 campos_monetarios  <- colnames(dataset)
-campos_monetarios  <- campos_monetarios[campos_monetarios %like% "^(m|Visa_m|Master_m|vm_m)"]
+campos_monetarios  <- campos_monetarios[campos_monetarios %like% "^(m|Visa_m|Master_m|vm_m|total|promedio)"]  ## ver si tengo q agregar alguna de las variables nuevas que creé
 
 #aqui aplico un metodo para atacar el data drifting
 #hay que probar experimentalmente cual funciona mejor
+
 switch( 
 PARAM$metodo,
   "ninguno"        = cat( "No hay correccion del data drifting" ),
@@ -326,8 +330,6 @@ PARAM$metodo,
   "rank_cero_fijo" = drift_rank_cero_fijo( campos_monetarios ),
   "deflacion"      = drift_deflacion( campos_monetarios ) 
 )
-
-
 
 fwrite( dataset,
         file="dataset.csv.gz",
