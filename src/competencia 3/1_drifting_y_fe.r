@@ -10,7 +10,9 @@ gc()             #garbage collection
 
 require("data.table")
 
-
+#tapply(dataset$mcuenta_corriente, dataset$clase_ternaria, summary)
+#prop.table(table(dataset$cproductos, dataset$clase_ternaria), margin = 2)
+#View(dataset[sample(nrow(dataset), 15), ])
 
 #Parametros del script
 PARAM  <- list()
@@ -100,6 +102,107 @@ AgregarVariables  <- function( dataset )
   dataset[ , vmr_mpagominimo         := vm_mpagominimo  / vm_mlimitecompra ]
 
   #Aqui debe usted agregar sus propias nuevas variables
+
+  ## Tiempo de vida en el banco 
+  dataset[, vida_banco := (cliente_antiguedad/12) / (cliente_edad)]
+
+  ## Ganancias banco
+  dataset[, mmargen := rowSums(.SD, na.rm = TRUE), .SDcols = c("mactivos_margen", "mpasivos_margen")]
+  dataset[, mmargen_x_producto := mmargen / cproductos]
+
+  ## Total Pasivos
+  dataset[, total_deuda := rowSums(.SD, na.rm = TRUE), .SDcols = c("mprestamos_personales", "mprestamos_prendarios", "mprestamos_hipotecarios", "Visa_msaldototal", "Master_msaldototal")]
+
+  ## Total Activos
+  dataset[, total_activos := rowSums(.SD, na.rm = TRUE), .SDcols = c("mplazo_fijo_dolares", "mplazo_fijo_pesos", "minversion1_pesos", "minversion1_dolares", "minversion2", "mcuentas_saldo")]
+
+  ## Balance en el banco
+  dataset[, balance := total_activos - total_deuda]
+  dataset[, ratio_deuda := total_deuda / (total_activos + 1)]
+
+  ## saldos
+  dataset[, has_cuentacorriente_saldo_pos := ifelse(mcuenta_corriente > 0, 1, 0) ]
+  dataset[, has_cajaahorro_saldo_pos := ifelse(mcaja_ahorro > 0, 1, 0) ]
+  dataset[, has_saldo_pos := ifelse(mcaja_ahorro + mcuenta_corriente > 0, 1, 0) ]
+
+  ## Tiene movimientos/tarjetas
+  dataset[, has_debito_transacciones := ifelse(dataset$ctarjeta_debito_transacciones > 0, 1, 0) ]
+  dataset[, has_visa := ifelse(dataset$ctarjeta_visa > 0, 1, 0) ]
+  dataset[, has_visa_transacciones := ifelse(dataset$ctarjeta_visa_transacciones > 0, 1, 0) ]
+  dataset[, has_master := ifelse(dataset$ctarjeta_master > 0, 1, 0) ]
+  dataset[, has_master_transacciones := ifelse(dataset$ctarjeta_master_transacciones > 0, 1, 0) ]
+
+  ## Cantidad de tarjetas total
+  dataset[, ctarjetas := rowSums(.SD, na.rm = TRUE), .SDcols = c("ctarjeta_visa", "ctarjeta_master")]
+
+  ## Total seguros
+  dataset[, cseguros := cseguro_vida + cseguro_auto + cseguro_vivienda + cseguro_accidentes_personales]
+
+  ## Recibo pago de sueldo?
+  dataset[, has_payroll := ifelse(dataset$cpayroll_trx + dataset$cpayroll2_trx  > 0, 1, 0) ]
+
+  ## Total payroll
+  dataset[, mpayroll_total := mpayroll + mpayroll2]
+
+  ## Tiene débitos automáticos?
+  dataset[, has_da := ifelse(dataset$ccuenta_debitos_automaticos + dataset$ctarjeta_visa_debitos_automaticos + dataset$ctarjeta_master_debitos_automaticos  > 0, 1, 0) ]
+
+  ## cant pago mis cuentas?
+  dataset[, has_pmc := ifelse(dataset$cpagomiscuentas  > 0, 1, 0) ]
+
+  ## Total débitos automáticos
+  dataset[, debitos_automaticos := mcuenta_debitos_automaticos + mttarjeta_visa_debitos_automaticos + mttarjeta_master_debitos_automaticos]
+
+  ## Total Consumos y gastos
+  dataset[, total_consumos := rowSums(.SD, na.rm = TRUE), .SDcols = c("mautoservicio", "mtarjeta_visa_consumo", "mtarjeta_master_consumo", "mpagodeservicios", "debitos_automaticos")]
+
+  ## Total descuentos (sobre total de consumos?)
+  dataset[, total_descuentos := rowSums(.SD, na.rm = TRUE), .SDcols = c("mtarjeta_visa_descuentos", "mtarjeta_master_descuentos", "mcajeros_propios_descuentos")]
+
+  ## Descuentos sobre consumos
+  dataset[, total_descuentos_sobre_consumos := ifelse(dataset$total_consumos == 0, 0, total_descuentos / total_consumos)]
+
+  ## Total comisiones
+  dataset[, has_comisiones := ifelse(dataset$ccomisiones_mantenimiento + dataset$ccomisiones_otras > 0, 1, 0) ]
+  dataset[, total_comisiones := mcomisiones_mantenimiento + mcomisiones_otras]
+
+  ## Balance transferencias
+  dataset[, balance_transferencias := mtransferencias_recibidas - mtransferencias_emitidas]
+
+  ## ¿hace más transacciones en cajeros de otros bancos?
+  dataset[, cajeros_ajenos := ifelse(dataset$matm < dataset$matm_other, 1, 0)]
+
+  ## ctrx quarter / cantidad de productos?
+  dataset[, ctrx_x_producto := ctrx_quarter / cproductos]
+
+  ## comisiones / ctrx_quarter?
+  dataset[, comisiones_x_trx := total_comisiones / (ctrx_quarter + 1) ]
+
+  # fechas tarjetas: llevo a años:
+  dataset[, master_vencimiento := floor(dataset$Master_Fvencimiento/365)]
+  dataset[, master_alta := floor(dataset$Master_fechaalta/365)]
+  dataset[, visa_vencimiento := floor(dataset$Visa_Fvencimiento/365)]
+  dataset[, visa_alta := floor(dataset$Visa_fechaalta/365)]
+
+  ## limite de compra promedio
+  dataset[, limite_compra_promedio := ifelse(dataset$ctarjetas == 0, 0, mv_mlimitecompra / ctarjetas) ]
+
+  # pagado sobre saldo
+  dataset[, pagado_sobre_saldo := ifelse(dataset$mv_msaldototal == 0, 0, mv_mpagado / mv_msaldototal) ]
+
+  # consumo promedio
+  dataset[, consumo_promedio := ifelse(dataset$mv_cconsumos == 0, 0, mv_mconsumototal /  mv_cconsumos) ]
+
+  ## limite de compra sobre ingresos
+  dataset[, limite_compra_sobre_ingresos := ifelse(dataset$mpayroll_total == 0, NA, mv_mlimitecompra / mpayroll_total) ]
+  dataset[, limite_compra_sobre_activos := ifelse(dataset$total_activos == 0, NA, mv_mlimitecompra / total_activos) ]
+
+  ## limite de compra real vs esperado según ingreso
+  limite_esperado = median(dataset[mpayroll_total > 0, mv_mlimitecompra / mpayroll_total], na.rm=TRUE)
+  dataset[, limite_compra_real_sobre_esperado := ifelse(dataset$total_activos == 0, NA, mpayroll_total * limite_esperado - mv_mlimitecompra) ]
+
+  ## suma de columnas null
+  dataset$na_count <- rowSums(is.na(dataset))  
 
   #valvula de seguridad para evitar valores infinitos
   #paso los infinitos a NULOS
