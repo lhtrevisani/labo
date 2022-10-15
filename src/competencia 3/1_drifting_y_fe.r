@@ -38,7 +38,7 @@ AgregarVariables  <- function( dataset )
   dataset[  , ctrx_quarter_normalizado := ctrx_quarter ]
   dataset[ cliente_antiguedad==1 , ctrx_quarter_normalizado := ctrx_quarter * 5 ]
   dataset[ cliente_antiguedad==2 , ctrx_quarter_normalizado := ctrx_quarter * 2 ]
-  dataset[ cliente_antiguedad==3 , ctrx_quarter_normalizado := ctrx_quarter * 1.2 ]
+  dataset[ cliente_antiguedad==3 , ctrx_quarter_normalizado := ctrx_quarter * (1.2) ]
 
   #variable extraida de una tesis de maestria de Irlanda
   dataset[  , mpayroll_sobre_edad  := mpayroll / cliente_edad ]
@@ -173,10 +173,10 @@ AgregarVariables  <- function( dataset )
   dataset[, cajeros_ajenos := ifelse(dataset$matm < dataset$matm_other, 1, 0)]
 
   ## ctrx quarter / cantidad de productos?
-  dataset[, ctrx_x_producto := ctrx_quarter / cproductos]
+  dataset[, ctrx_x_producto := ctrx_quarter_normalizado / cproductos]
 
   ## comisiones / ctrx_quarter?
-  dataset[, comisiones_x_trx := total_comisiones / (ctrx_quarter + 1) ]
+  dataset[, comisiones_x_trx := total_comisiones / (ctrx_quarter_normalizado + 1) ]
 
   # fechas tarjetas: llevo a años:
   dataset[, master_vencimiento := floor(dataset$Master_Fvencimiento/365)]
@@ -296,7 +296,7 @@ drift_rank_cero_fijo  <- function( campos_drift )
 #------------------------------------------------------------------------------
 #Aqui comienza el programa
 
-setwd("~/buckets/b1")   #cloud: "~/buckets/b1"  #local: "~/Documents/Maestria"
+setwd("~/Documents/Maestria")   #cloud: "~/buckets/b1"  #local: "~/Documents/Maestria"
 
 #cargo el dataset donde voy a entrenar
 #esta en la carpeta del exp_input y siempre se llama  dataset.csv.gz
@@ -304,7 +304,7 @@ dataset_input  <- paste0( "./exp/", PARAM$exp_input, "/dataset.csv.gz" )
 dataset  <- fread( dataset_input )
 
 ## pruebo las funciones con una muestra, después elimino esto en cloud:
-## dataset <- dataset[sample(1:nrow(dataset), 100000, replace=FALSE),]
+#dataset <- dataset[sample(1:nrow(dataset), 100000, replace=FALSE),]
 
 #creo la carpeta donde va el experimento
 dir.create( paste0( "./exp/", PARAM$experimento, "/"), showWarnings = FALSE )
