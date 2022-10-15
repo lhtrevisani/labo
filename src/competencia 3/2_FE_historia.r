@@ -120,7 +120,7 @@ cppFunction('NumericVector fhistC(NumericVector pcolumna, IntegerVector pdesde )
 #La funcionalidad de ratioavg es autoria de  Daiana Sparta,  UAustral  2021
 
 TendenciaYmuchomas  <- function( dataset, cols, ventana=6, tendencia=TRUE, minimo=TRUE, maximo=TRUE, promedio=TRUE, 
-                                 ratioavg=FALSE, ratiomax=FALSE)
+                                 ratioavg=FALSE, ratiomax=FALSE, minmax=TRUE)
 {
   gc()
   #Esta es la cantidad de meses que utilizo para la historia
@@ -148,9 +148,11 @@ TendenciaYmuchomas  <- function( dataset, cols, ventana=6, tendencia=TRUE, minim
     if(promedio)   dataset[ , paste0( campo, "_avg", ventana)  := nueva_col[ (3*last +1):(4*last) ]  ]
     if(ratioavg)   dataset[ , paste0( campo, "_ratioavg", ventana)  := get(campo) /nueva_col[ (3*last +1):(4*last) ]  ]
     if(ratiomax)   dataset[ , paste0( campo, "_ratiomax", ventana)  := get(campo) /nueva_col[ (2*last +1):(3*last) ]  ]
+    if(minmax)   dataset[ , paste0( campo, "_minmax", ventana)  := (get(campo) - nueva_col[ (1*last +1):(2*last) ]) / (nueva_col[ (2*last +1):(3*last) ] - nueva_col[ (1*last +1):(2*last) ])   ]
   }
 
 }
+
 #------------------------------------------------------------------------------
 #agrega al dataset nuevas variables {0,1} que provienen de las hojas de un Random Forest
 
@@ -309,14 +311,17 @@ CanaritosAsesinos  <- function( canaritos_ratio=0.2 )
 #------------------------------------------------------------------------------
 #Aqui empieza el programa
 
-setwd( "~/buckets/b1/" )
+setwd( "~/Documents/Maestria" )  #cloud: "~/buckets/b1/"  local: "~/Documents/Maestria"
 
 #cargo el dataset donde voy a entrenar
 #esta en la carpeta del exp_input y siempre se llama  dataset.csv.gz
 dataset_input  <- paste0( "./exp/", PARAM$exp_input, "/dataset.csv.gz" )
 dataset  <- fread( dataset_input )
 
-
+# me quedo con una muestra de usuarios para pruebas:
+clientes_unicos = unique(dataset$numero_de_cliente)
+muestra_clientes = sample(clientes_unicos,250)
+dataset = dataset [numero_de_cliente %in% muestra_clientes ,]
 
 #creo la carpeta donde va el experimento
 dir.create( paste0( "./exp/", PARAM$experimento, "/"), showWarnings = FALSE )
@@ -374,12 +379,17 @@ if( PARAM$Tendencias )
                       cols= cols_lagueables,
                       ventana=   6,      # 6 meses de historia
                       tendencia= TRUE,
-                      minimo=    FALSE,
-                      maximo=    FALSE,
+                      minimo=    TRUE,
+                      maximo=    TRUE,
                       promedio=  TRUE,
-                      ratioavg=  FALSE,
-                      ratiomax=  FALSE  )
+                      ratioavg=  TRUE,
+                      ratiomax=  FALSE,
+                      minmax = FALSE)
 }
+
+# para chequear con una sola columna como va quedando todo:
+#library(dplyr)
+#prueba = select(dataset, foto_mes, numero_de_cliente, contains("ctrx"))
 
 #------------------------------------------------------------------------------
 #Agrego variables a partir de las hojas de un Random Forest
