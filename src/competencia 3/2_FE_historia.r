@@ -27,7 +27,7 @@ PARAM$lag1  <- TRUE
 PARAM$lag2  <- FALSE
 PARAM$Tendencias  <- TRUE
 PARAM$RandomForest  <- FALSE          #No se puede poner en TRUE para la entrega oficial de la Tercera Competencia
-PARAM$CanaritosAsesinos  <- FALSE
+PARAM$CanaritosAsesinos  <- TRUE
 # FIN Parametros del script
 
 #------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ CanaritosAsesinos  <- function( canaritos_ratio=0.2 )
 #------------------------------------------------------------------------------
 #Aqui empieza el programa
 
-setwd( "~/Documents/Maestria" )  #cloud: "~/buckets/b1/"  local: "~/Documents/Maestria"
+setwd( "~/buckets/b1/" )  #cloud: "~/buckets/b1/"  local: "~/Documents/Maestria"
 
 #cargo el dataset donde voy a entrenar
 #esta en la carpeta del exp_input y siempre se llama  dataset.csv.gz
@@ -319,9 +319,9 @@ dataset_input  <- paste0( "./exp/", PARAM$exp_input, "/dataset.csv.gz" )
 dataset  <- fread( dataset_input )
 
 # me quedo con una muestra de usuarios para pruebas:
-clientes_unicos = unique(dataset$numero_de_cliente)
-muestra_clientes = sample(clientes_unicos,250)
-dataset = dataset [numero_de_cliente %in% muestra_clientes ,]
+#clientes_unicos = unique(dataset$numero_de_cliente)
+#muestra_clientes = sample(clientes_unicos,250)
+#dataset = dataset [numero_de_cliente %in% muestra_clientes ,]
 
 #creo la carpeta donde va el experimento
 dir.create( paste0( "./exp/", PARAM$experimento, "/"), showWarnings = FALSE )
@@ -411,7 +411,7 @@ if( PARAM$RandomForest )
 if( PARAM$CanaritosAsesinos )
 {
   ncol( dataset )
-  CanaritosAsesinos( canaritos_ratio = 0.3 )
+  CanaritosAsesinos( canaritos_ratio = 0.2 )
   ncol( dataset )
 }
 
