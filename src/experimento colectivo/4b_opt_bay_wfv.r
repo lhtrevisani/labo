@@ -71,15 +71,15 @@ param_lgb_basicos  <- list(
 
 #Aqui se cargan los hiperparametros que se optimizan en la Bayesian Optimization
 hs <- makeParamSet( 
-         makeNumericParam("learning_rate",    lower=    0.005, upper=    0.3),
-         makeNumericParam("feature_fraction", lower=    0.2  , upper=    1.0),
+         makeNumericParam("learning_rate",    lower=    0.005, upper=    0.1),
+         makeNumericParam("feature_fraction", lower=    0.2  , upper=    0.8),
          makeIntegerParam("min_data_in_leaf", lower=    0L   , upper=  8000L),
          makeIntegerParam("num_leaves",       lower=   16L   , upper=  2048L)
         )
 
 
-#si usted es ambicioso, y tiene paciencia, podria subir este valor a 100
-kBO_iteraciones  <- 50  #iteraciones de la Optimizacion Bayesiana
+OB_max_time_hour  <- 50  # tiempo que va a correr la optimización bayesiana
+OB_max_time <- OB_max_time_hour * 3600  # en la función setMBOControlTermination el tiempo va en segundos
 
 #------------------------------------------------------------------------------
 #graba a un archivo los componentes de lista
@@ -413,7 +413,7 @@ ctrl  <- makeMBOControl( save.on.disk.at.time= 600,
                          save.file.path=       "bayesiana.RDATA" )
                          
 ctrl  <- setMBOControlTermination( ctrl, 
-                                   iters= kBO_iteraciones )   #cantidad de iteraciones
+                                   time.budget = OB_max_time )   #cantidad de iteraciones
                                    
 ctrl  <- setMBOControlInfill(ctrl, crit= makeMBOInfillCritEI() )
 
