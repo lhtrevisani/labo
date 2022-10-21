@@ -66,7 +66,7 @@ campos_buenos  <- setdiff( colnames(dataset), c( "clase_ternaria", "clase01") )
 resultado_iteracion <- c()
 ganancia_acumulada_iteracion <- 0
 
-for( i in  seq(1, nrow(tb_log), 5)  ) {  ## cada 5 iteraciones, calculo la ganancia en test con 10 semillas
+for( i in  c(seq(1, nrow(tb_log), 5), nrow(tb_log)  ) {  ## cada 5 iteraciones, calculo la ganancia en test con 10 semillas
 
   ## para la primera iteración, armo el armo el modelo, y 
   parametros  <- as.list( copy( tb_log[ i ] ) )
