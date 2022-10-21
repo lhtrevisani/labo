@@ -14,7 +14,7 @@ require("data.table")
 
 #Parametros del script
 PARAM  <- list()
-PARAM$experimento <- "TS9311a"
+PARAM$experimento <- "TS9312a"
 
 PARAM$exp_input  <- "FE9251"
 
@@ -23,8 +23,8 @@ PARAM$future       <- c( 202105 )
 PARAM$final_train  <- c( 202103)
 
 PARAM$train$training     <- c( 202103 )
-PARAM$train$validation   <- c( 999999 )
-PARAM$train$testing      <- c( 999999 )
+PARAM$train$validation   <- c( 202103 )
+PARAM$train$testing      <- c( 202103 )
 PARAM$train$undersampling  <- 1.0   # 1.0 significa NO undersampling ,  0.1  es quedarse con el 10% de los CONTINUA
 PARAM$train$semilla  <- 700423
 # FIN Parametros del script
