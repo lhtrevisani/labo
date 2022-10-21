@@ -137,7 +137,7 @@ for( i in  c(seq(1,50,5), 50, seq(60,nrow(tb_log),10)) ) {  ## cada 5 iteracione
   
 }
 
-colnames(resultado_iteracion) <- c("iteracion", "ganancia")
+colnames(resultado_iteracion) <- c("iteracion", "ganancia", "vector_ganancias")
 
 
 fwrite(  resultado_iteracion,
