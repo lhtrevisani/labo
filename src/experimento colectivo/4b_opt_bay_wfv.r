@@ -78,7 +78,7 @@ hs <- makeParamSet(
         )
 
 
-OB_max_time_hour  <- 50  # tiempo que va a correr la optimización bayesiana
+OB_max_time_hour  <- 6.5  # tiempo que va a correr la optimización bayesiana
 OB_max_time <- OB_max_time_hour * 3600  # en la función setMBOControlTermination el tiempo va en segundos
 
 #------------------------------------------------------------------------------
