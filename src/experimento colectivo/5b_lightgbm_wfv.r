@@ -9,7 +9,7 @@ rm( list=ls() )  #remove all objects
 gc()             #garbage collection
 
 require("data.table")
-
+require("dplyr")
 require("lightgbm")
 
 #Parametros del script
@@ -17,6 +17,7 @@ PARAM  <- list()
 PARAM$experimento  <- "ZZ9412b"
 PARAM$exp_input  <- "HT9412b"
 
+PARAM$exp_input_cv  <- "HT9412a"
 #PARAM$modelos  <- 2
 
 # FIN Parametros del script
@@ -46,6 +47,11 @@ tb_log  <- fread( arch_log )
 #setorder( tb_log, -ganancia )
 tb_log$ganancia_max_acum = cummax(tb_log$ganancia)
 
+
+#leo la salida de la optimizaciob bayesiana (cross validation)
+arch_log_cv  <- paste0( base_dir, "exp/", PARAM$exp_input_cv, "/BO_log.txt" )
+tb_log_cv  <- fread( arch_log_cv )
+
 #leo el nombre del expermento de la Training Strategy
 arch_TS  <- paste0( base_dir, "exp/", PARAM$exp_input, "/TrainingStrategy.txt" )
 TS  <- readLines( arch_TS, warn=FALSE )
@@ -66,13 +72,15 @@ campos_buenos  <- setdiff( colnames(dataset), c( "clase_ternaria", "clase01") )
 resultado_iteracion <- c()
 ganancia_acumulada_iteracion <- 0
 
-for( i in  c(seq(1,50,5), 50, seq(60,nrow(tb_log),10)) ) {  ## cada 5 iteraciones, calculo la ganancia en test con 10 semillas
+for( i in   c(seq(1, nrow(tb_log_cv), 5), seq(nrow(tb_log_cv),nrow(tb_log),10), nrow(tb_log)) ) {  ## cada 5 iteraciones, calculo la ganancia en test con 10 semillas
 
   ## para la primera iteración, armo el armo el modelo, y 
   parametros  <- as.list( copy( tb_log[ i ] ) )
   iteracion_bayesiana  <- parametros$iteracion_bayesiana
   
   if(parametros$ganancia_max_acum > ganancia_acumulada_iteracion){
+    
+    parametros <- as.list(tb_log %>% filter(ganancia == parametros$ganancia_max_acum))
     
     #creo CADA VEZ el dataset de lightgbm
     dtrain  <- lgb.Dataset( data=    data.matrix( dataset[ , campos_buenos, with=FALSE] ),
