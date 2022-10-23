@@ -35,7 +35,7 @@ options(error = function() {
 #------------------------------------------------------------------------------
 #Aqui empieza el programa
 
-base_dir <- "~/Documents/Maestria/"  # cloud:  "~/buckets/b1/"   #maestria
+base_dir <- "~/buckets/b1/"  # cloud:  "~/buckets/b1/"   #maestria
 
 #creo la carpeta donde va el experimento
 dir.create( paste0( base_dir, "exp/", PARAM$experimento, "/"), showWarnings = FALSE )
@@ -134,18 +134,18 @@ for( i in   c(seq(1, nrow(tb_log_cv), 5), seq(nrow(tb_log_cv),nrow(tb_log),10), 
     }
     
     ganancia_modelo <- mean(ganancia_iter)
-    resultado_iteracion = rbind(resultado_iteracion, list(i, ganancia_modelo, ganancia_iter))
+    resultado_iteracion = rbind(resultado_iteracion, list(i, ganancia_modelo))
     ganancia_acumulada_iteracion = ganancia_acumulada
   
   } else {
     
-    resultado_iteracion = rbind(resultado_iteracion, list(i, resultado_iteracion[-1,2], resultado_iteracion[-1,3]))
+    resultado_iteracion = rbind(resultado_iteracion, list(i, resultado_iteracion[-1,2]))
     
   }
   
 }
 
-colnames(resultado_iteracion) <- c("iteracion", "ganancia", "vector_ganancias")
+colnames(resultado_iteracion) <- c("iteracion", "ganancia")
 
 
 fwrite(  resultado_iteracion,
