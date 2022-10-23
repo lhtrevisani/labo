@@ -78,7 +78,7 @@ for( i in  c(seq(1, nrow(tb_log), 5), nrow(tb_log))  ) {  ## cada 5 iteraciones,
   
   if(parametros$ganancia_max_acum > ganancia_acumulada_iteracion){
     
-    parametros <- as.list(tb_log %>% filter(ganancia == parametros$ganancia_max_acum))
+    parametros <- as.list(tb_log %>% filter(ganancia == parametros$ganancia_max_acum) %>% head(1))
     
     #creo CADA VEZ el dataset de lightgbm
     dtrain  <- lgb.Dataset( data=    data.matrix( dataset[ , campos_buenos, with=FALSE] ),
