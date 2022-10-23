@@ -17,6 +17,8 @@ PARAM  <- list()
 PARAM$experimento  <- "ZZ9412a"
 PARAM$exp_input  <- "HT9412a"
 
+PARAM$corte = 9000
+
 #PARAM$modelos  <- 2
 
 # FIN Parametros del script
@@ -64,8 +66,8 @@ dataset[ , clase01 := ifelse( clase_ternaria %in% c("BAJA+1","BAJA+2"), 1, 0 )  
 campos_buenos  <- setdiff( colnames(dataset), c( "clase_ternaria", "clase01") )
 
 
-resultado_iteracion <- data.frame(matrix(ncol = 2, nrow = 0))
-colnames(resultado_iteracion) <- c("iteracion", "ganancia")
+resultado_iteracion <- data.frame(matrix(ncol = 3, nrow = 0))
+colnames(resultado_iteracion) <- c("iteracion", "ganancia", "ganancia_corte")
 
 ganancia_acumulada_iteracion <- 0
 
@@ -103,6 +105,7 @@ for( i in  c(seq(1, nrow(tb_log), 5), nrow(tb_log))  ) {  ## cada 5 iteraciones,
     parametros$ganancia_max_acum <- NULL
     
     ganancia_iter <- c()
+    ganancia_iter_corte <- c()
     
     for (j in vector_semillas) {
       
@@ -123,21 +126,29 @@ for( i in  c(seq(1, nrow(tb_log), 5), nrow(tb_log))  ) {  ## cada 5 iteraciones,
       tbl  <- dfuture[ , list(clase_ternaria) ]
     
       tbl[ , prob := prediccion ]
+
+      setorder( tbl, -prob )
+
+      tbl[  , Predicted := 0L ]
+      tbl[ 1:PARAM$corte, Predicted := 1L ]
     
-      ganancia_test  <- tbl[ prob >= prob_corte,
-                             sum( ifelse(clase_ternaria=="BAJA+2", 78000, -2000 ) )]
+      ganancia_test  <- tbl[ prob >= prob_corte, sum( ifelse(clase_ternaria=="BAJA+2", 78000, -2000 ) )]
+      ganancia_test_corte = tbl[ Predicted == 1, sum( ifelse(clase_ternaria=="BAJA+2", 78000, -2000 ) )]
     
       ganancia_iter <- rbind( ganancia_iter, ganancia_test)
+      ganancia_iter_corte <- rbind( ganancia_iter_corte, ganancia_test_corte)
     
     }
     
     ganancia_modelo <- mean(ganancia_iter)
-    resultado_iteracion = rbind(resultado_iteracion, c(i, ganancia_modelo))
+    ganancia_modelo_corte <- mean(ganancia_iter_corte)
+
+    resultado_iteracion = rbind(resultado_iteracion, c(i, ganancia_modelo, ganancia_modelo_corte))
     ganancia_acumulada_iteracion = ganancia_acumulada
   
   } else {
     
-    resultado_iteracion = rbind(resultado_iteracion, c(i, resultado_iteracion[nrow(resultado_iteracion),2]))
+    resultado_iteracion = rbind(resultado_iteracion, c(i, resultado_iteracion[nrow(resultado_iteracion),2], resultado_iteracion[nrow(resultado_iteracion),3]))
     
   }
   
