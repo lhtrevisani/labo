@@ -63,7 +63,10 @@ dataset[ , clase01 := ifelse( clase_ternaria %in% c("BAJA+1","BAJA+2"), 1, 0 )  
 
 campos_buenos  <- setdiff( colnames(dataset), c( "clase_ternaria", "clase01") )
 
-resultado_iteracion <- c()
+
+resultado_iteracion <- data.frame(matrix(ncol = 2, nrow = 0))
+colnames(resultado_iteracion) <- c("iteracion", "ganancia")
+
 ganancia_acumulada_iteracion <- 0
 
 
@@ -129,19 +132,16 @@ for( i in  c(seq(1, nrow(tb_log), 5), nrow(tb_log))  ) {  ## cada 5 iteraciones,
     }
     
     ganancia_modelo <- mean(ganancia_iter)
-    resultado_iteracion = rbind(resultado_iteracion, list(i, ganancia_modelo))
+    resultado_iteracion = rbind(resultado_iteracion, c(i, ganancia_modelo))
     ganancia_acumulada_iteracion = ganancia_acumulada
   
   } else {
     
-    resultado_iteracion = rbind(resultado_iteracion, list(i, resultado_iteracion[-1,2]))
+    resultado_iteracion = rbind(resultado_iteracion, c(i, resultado_iteracion[nrow(resultado_iteracion),2]))
     
   }
   
 }
-
-colnames(resultado_iteracion) <- c("iteracion", "ganancia")
-
 
 fwrite(  resultado_iteracion,
          file= "ganancias_iteracion.csv",
