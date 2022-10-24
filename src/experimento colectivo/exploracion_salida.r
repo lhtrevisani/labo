@@ -109,6 +109,6 @@ ggplot(log_ganancias,                            # Draw ggplot2 time series plot
        y = "Ganancia en test",
        colour = "Validación"
        ) +
-  scale_x_continuous(breaks = seq(0, 320, 50))
+  scale_x_continuous(breaks = seq(0, 320, 60))
 
   
