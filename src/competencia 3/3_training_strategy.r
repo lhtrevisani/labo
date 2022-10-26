@@ -14,13 +14,13 @@ require("data.table")
 
 #Parametros del script
 PARAM  <- list()
-PARAM$experimento <- "TS9310"
+PARAM$experimento <- "TS9311"
 
 PARAM$exp_input  <- "FE9250"
 
 PARAM$future       <- c( 202107 )
 
-PARAM$final_train  <- c( 202103, 202104, 202105 )
+PARAM$final_train  <- c( 202101, 202102, 202103, 202104, 202105 )
 
 PARAM$train$training     <- c( 202101, 202102, 202103 )
 PARAM$train$validation   <- c( 202104 )
