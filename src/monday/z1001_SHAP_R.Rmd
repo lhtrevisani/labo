@@ -1,0 +1,167 @@
+---
+title: "SHAP en R"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r}
+rm(list=ls())
+require("data.table")
+require("reticulate")
+set.seed(123)
+```
+
+# Exploración de SHAP
+
+Algunas explicaciones sobre el método provienen directamente de la documentación de la biblioteca citada en el [repo oficial](https://github.com/slundberg/shap)
+
+## Carga de datasets
+
+```{r}
+setwd("~/Documents/Maestria")
+dataset_c1 <- fread("datasets/competencia1_2022.csv", stringsAsFactors= TRUE)
+Xtrain <- dataset_c1[foto_mes == 202101,]
+ytrain  <-  Xtrain[, clase_ternaria :=  ifelse( clase_ternaria =="CONTINUA", "0", "1" )  ]
+```
+
+
+```{r}
+Xbajas = dataset_c1[foto_mes == 202101 & clase_ternaria != 'CONTINUA',]
+Xcontinuan = dataset_c1[foto_mes == 202101 & clase_ternaria == 'CONTINUA',]
+Xbajas <- Xbajas[, !"clase_ternaria", with = FALSE]
+Xcontinuan <- Xcontinuan[, !"clase_ternaria", with = FALSE]
+
+rm(dataset_c1)
+gc()
+```
+
+
+```{r}
+Xtrain <- Xtrain[, !"clase_ternaria", with = FALSE]
+```
+
+## Modelito en LGBM
+
+```{python}
+import lightgbm as lgb
+import pandas as pd
+
+# dtrain  <- lgb.Dataset( data= data.matrix(Xtrain),
+#                           label= ytrain,
+#                           free_raw_data= FALSE
+#                         )
+# 
+# 
+# modelo  <- lgb.train( data= dtrain,
+#                       param= list( objective=          "binary",
+#                                    max_bin=           15,
+#                                    learning_rate=     0.05,
+#                                    min_data_in_leaf=   4000,
+#                                    verbose = 2,
+#                                    num_iterations= 100
+#                                   )
+#                     )
+# create dataset for lightgbm
+lgb_train = lgb.Dataset(r.Xtrain, r.ytrain['clase_ternaria'].values)
+
+# specify your configurations as a dict
+params = {
+    'objective': 'binary',
+    'learning_rate': 0.05,
+    'verbose': 2,
+    'max_bin': 15,
+    'min_data_in_leaf': 4000,
+    'verbose': 0,
+}
+
+gbm = lgb.train(params,
+                lgb_train,
+                num_boost_round=100)
+```
+### Feature importance enlatado de LGBM
+
+```{python}
+lgbm_importancia = pd.DataFrame({'Features': gbm.feature_name(),
+                        'Importances': gbm.feature_importance()})
+lgbm_importancia.sort_values(by='Importances', inplace=True, ascending=False)
+lgbm_importancia
+```
+### SHAP
+
+Queremos comprender cómo el modelo trató a las bajas de ese mes, por lo que aplicamos SHAP solo a las bajas:
+
+```{python}
+import shap
+explainer = shap.TreeExplainer(gbm)
+shap_values_Xbajas = explainer.shap_values(r.Xbajas)
+
+```
+El TreeExplainer de las bajas es un array, con tantos elementos como clases existan. Se ve claramente que cada elemento del array contiene los mismos valores, pero con distinto signo.
+
+```{python}
+shap_values_Xbajas[0]
+```
+
+
+
+```{python}
+shap_values_Xbajas[1]
+```
+
+```{python}
+import pandas as pd
+shap_bajas = pd.DataFrame(shap_values_Xbajas[0], columns = r.Xbajas.columns)
+shap_bajas
+```
+
+```{python}
+shap_importancias_bajas = shap_bajas.mean().abs().sort_values(ascending=False)
+shap_importancias_bajas
+```
+Ploteamos los shap values del modelo aplicado a Xbajas. El largo de la barra nos dice que tanta influencia la variable tiene en la predicción. Se ve como cada variable esta dividida equitativamente en dos clases, lo cual tiene sentido dado que la contribución a cada clase es la misma (pero negativa o positiva)
+
+```{python}
+shap.summary_plot(shap_values_Xbajas, r.Xbajas)
+```
+
+Vemos el dependence plot, un scatter plot que muestra el efecto de una variable en las predicciones del modelo. 
+El color corresponde a una segunda variable que puede tener un efecto de interacción con la variable que estamos ploteando inicialmente. Esta segunda variable de elige de manera automática. 
+
+
+```{python}
+shap.dependence_plot("cliente_edad", shap_values_Xbajas[0], r.Xbajas)
+```
+Probamos el mismo proceso con el dataset de clientes que continuan
+
+```{python}
+shap_values_Xcontinuan = explainer.shap_values(r.Xcontinuan)
+shap_continuan = pd.DataFrame(shap_values_Xcontinuan[0], columns = r.Xcontinuan.columns)
+shap_continuan
+```
+
+```{python}
+shap_importancias_continuan = shap_continuan.mean().abs().sort_values(ascending=False)
+shap_importancias_continuan
+
+```
+
+
+
+```{python}
+shap.summary_plot(shap_values_Xcontinuan, r.Xcontinuan)
+```
+En el plot de dependencias vemos que el plot parece sugerir que la probabilidad de clasificar a un cliente como "continua" (0) comienza a aumentar a partir de cliente_edad mayor a 50 años. Esto es semejante a lo que ocurre en las explicaciones para el dataset de bajas.
+
+```{python}
+shap.dependence_plot("cliente_edad", shap_values_Xcontinuan[0], r.Xcontinuan)
+
+```
+
+## Usando los valores en R
+
+En un chunk con header "r" (es decir, con código en R), con p$ podemos acceder a los objetos creados en el entorno de python:
+
+```{r}
+py$shap_values_Xbajas
+```
