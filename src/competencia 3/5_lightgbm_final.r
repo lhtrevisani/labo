@@ -17,7 +17,7 @@ PARAM  <- list()
 PARAM$experimento  <- "ZZ9412"
 PARAM$exp_input  <- "HT9412"
 
-PARAM$modelos  <- 1
+PARAM$modelos  <- 2
 # FIN Parametros del script
 
 ksemilla  <- 700423
