@@ -139,8 +139,8 @@ for( i in  1:PARAM$modelos )
 
   #genero los archivos para Kaggle
   cortes  <- seq( from=  7000,
-                  to=   11000,
-                  by=     250 )
+                  to=   13000,
+                  by=     500 )
 
 
   setorder( tb_prediccion, -prob )
