@@ -17,7 +17,7 @@ PARAM  <- list()
 PARAM$experimento  <- "ZZ9412"
 PARAM$exp_input  <- "HT9412"
 
-PARAM$modelos  <- 3
+PARAM$modelos  <- 2
 # FIN Parametros del script
 
 ksemilla  <- 700423
@@ -139,7 +139,7 @@ for( i in  1:PARAM$modelos )
 
   #genero los archivos para Kaggle
   cortes  <- seq( from=  7000,
-                  to=   13000,
+                  to=   15000,
                   by=     500 )
 
 
