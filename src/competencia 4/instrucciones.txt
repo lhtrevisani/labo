@@ -1,0 +1,36 @@
+instrucciones corrida (estrategia):
+
+(común a todos los modelos)
+0_reparar_dataset.r: se corrigen los errores utilizando el método machine learning
+1_drifting_y_fe.r: se corrige el drifting usando rank cero fijo
+
+(modelo A)
+
+2a_FE_historia:
+    
+    se aplica: 
+
+        - canaritos
+        -
+
+3a_training_strategy_under:
+
+    se aplica:
+
+4a_HT_lightgbm_under.r:
+
+
+(modelo B)
+
+2a_FE_historia:
+    
+    se aplica: 
+
+        - canaritos
+        -
+
+3a_training_strategy_under:
+
+    se aplica:
+
+4a_HT_lightgbm_under.r:
