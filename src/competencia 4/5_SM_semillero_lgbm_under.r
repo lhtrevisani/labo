@@ -21,10 +21,10 @@ PARAM$exp_input <- "HT9421"
 
 # PARAM$modelos  <- 2
 PARAM$modelo <- 1 # se usa el mejor de la OB, pero a futuro podria variar esto
-PARAM$semilla_primos <- 700423
+PARAM$semilla_primos <- 333 * PARAM$modelo
 PARAM$semillerio <- 100 # ¿De cuanto será nuestro semillerio?
 PARAM$indice_inicio_semilla <- 1
-PARAM$indice_fin_semilla <- 10
+PARAM$indice_fin_semilla <- 40
 # FIN Parametros del script
 
 # genero un vector de una cantidad de PARAM$semillerio  de semillas,  buscando numeros primos al azar
@@ -75,7 +75,7 @@ campos_buenos  <- setdiff( colnames(dataset), c( "clase_ternaria", "clase01") )
 #tb_semillerio_rank <- dfuture[, list(numero_de_cliente, foto_mes)]
 
 # Guardo las semillas Y EL ORDEN en que son usadas
-write.csv(ksemillas, file = "ksemillas.csv", row.names = FALSE)
+write.csv(ksemillas, file = paste0("modelo", PARAM$modelo, "_ksemillas.csv"), row.names = FALSE)
 
 #genero un modelo para cada uno de las modelos_qty MEJORES iteraciones de la Bayesian Optimization
 for( ksemilla in ksemillas[PARAM$indice_inicio_semilla:PARAM$indice_fin_semilla] )
@@ -84,6 +84,8 @@ for( ksemilla in ksemillas[PARAM$indice_inicio_semilla:PARAM$indice_fin_semilla]
   # optimización: si los archivos ya existen, puedo hacer skip de esta semilla
   nom_submit <- paste0(
     PARAM$experimento,
+    "_modelo",
+    PARAM$modelo,
     "_",
     sprintf("%d", ksemilla),
     ".csv"
@@ -91,6 +93,8 @@ for( ksemilla in ksemillas[PARAM$indice_inicio_semilla:PARAM$indice_fin_semilla]
 
   nom_submit_rank <- paste0(
     PARAM$experimento,
+    "_modelo",
+    PARAM$modelo,
     "_",
     sprintf("%d", ksemilla),
     "_rank.csv"
@@ -98,6 +102,8 @@ for( ksemilla in ksemillas[PARAM$indice_inicio_semilla:PARAM$indice_fin_semilla]
   
   nom_resultados <- paste0(
     PARAM$experimento,
+    "_modelo",
+    PARAM$modelo,
     "_",
     sprintf("%d", ksemilla),
     "_resultados.csv"
