@@ -55,3 +55,9 @@ Se toman los vectores de probabilidades de cada semilla de cada modelo, se ranke
 
 
 Punto de corte:
+
+0.00678 _____ 11000       (164,3k)
+0.00433 _____ X.          (164,9k)
+
+
+0.0045 * 10 = 0.045 * 164.9 = 7500 aprox.
