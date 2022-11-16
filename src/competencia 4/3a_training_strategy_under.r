@@ -101,8 +101,10 @@ dataset[ foto_mes %in% PARAM$train$validation, fold_validate := 1L ]
 dataset[  , fold_test := 0L ]
 dataset[ foto_mes %in% PARAM$train$testing, fold_test := 1L ]
 
+dataset = dataset[ fold_train + fold_validate + fold_test >= 1 , ]
+dataset = dataset[ , azar_under:=NULL]
 
-fwrite( dataset[ fold_train + fold_validate + fold_test >= 1 , ],
+fwrite( dataset,
         file= "dataset_training.csv.gz",
         logical01= TRUE,
         sep= "," )
