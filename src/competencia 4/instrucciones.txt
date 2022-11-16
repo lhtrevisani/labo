@@ -22,7 +22,7 @@ instrucciones corrida (estrategia):
 
 4a_HT_lightgbm_under.r: 18 horas de iteración bayesiana
 
-5a_SM_semillero_lgbm_under: se corren 40 semillas para los modelos:
+5a_SM_semillero_lgbm_under: se corren 40 semillas para los modelos: 1, 2, 5, 10, 25, 50, ¿100?
 
 (modelo B)
 
@@ -46,7 +46,7 @@ instrucciones corrida (estrategia):
 
 4a_HT_lightgbm_under.r: 50 iteraciones
 
-5b_SM_semillero_lgbm_under: se corren 40 semillas para los modelos
+5b_SM_semillero_lgbm_under: se corren 40 semillas para los modelos 1, 2, 5, 10, 25, 50, ¿100?
 
 
 Ensamble:
