@@ -33,7 +33,7 @@ prophet_df = dataset %>%
   select(foto_mes, ratio_bajas) %>%
   mutate(ds = foto_mes, y = ratio_bajas) %>%
   select(-c(foto_mes, ratio_bajas)) %>%
-  filter(y > 0)
+  filter(ds < '2021-08-01')
 
 
 pandemia  = data.frame(holiday= 'pandemia',
@@ -55,3 +55,7 @@ future <- make_future_dataframe(prophet_mensual, periods=2, freq= 60 * 60 * 24 *
 forecast <- predict(prophet_mensual, future)
 
 plot(prophet_mensual,fcst=forecast) +theme_bw()
+
+
+forecast %>%
+  select(ds, yhat)
