@@ -6,31 +6,41 @@ instrucciones corrida (estrategia):
 
 (modelo A)
 
-2a_FE_historia:
-    
-    se aplica: 
-
-        - canaritos
-        -
+2a_FE_historia: canaritos (0.3), lag1, lag2, tendencias (6 meses), max, min, ratioavg, promedio
 
 3a_training_strategy_under:
 
     se aplica:
 
-4a_HT_lightgbm_under.r:
+    PARAM$future       <- c( 202109 )
+    PARAM$final_train  <- c( 201909, 201910, 201911, 201912, 202001, 202002, 202011, 202012, 202101, 202102, 202103, 202104, 202105, 202106, 202107 )
+    PARAM$train$training     <- c( 201907, 201908, 201909, 201910, 201911, 201912, 202001, 202002, 202011, 202012, 202101, 202102, 202103, 202104, 202105 )
+    PARAM$train$validation   <- c( 202106 )
+    PARAM$train$testing      <- c( 202107 ) 
+
+    undersampling mayoritaria: 0.5
+
+4a_HT_lightgbm_under.r: 18 horas de iteración bayesiana
 
 
 (modelo B)
 
-2a_FE_historia:
+2b_FE_historia:
     
     se aplica: 
 
-        - canaritos
-        -
+        - lag1, lag2, promedio, tendencia (ventana 3 meses)
 
-3a_training_strategy_under:
+3b_training_strategy_under:
 
     se aplica:
 
-4a_HT_lightgbm_under.r:
+    PARAM$future       <- c( 202109 )
+    PARAM$final_train  <- c( 201909, 201910, 201911, 201912, 202001, 202002, 202011, 202012, 202101, 202102, 202103, 202104, 202105, 202106, 202107 )
+    PARAM$train$training     <- c( 201907, 201908, 201909, 201910, 201911, 201912, 202001, 202002, 202011, 202012, 202101, 202102, 202103, 202104, 202105 )
+    PARAM$train$validation   <- c( 202106 )
+    PARAM$train$testing      <- c( 202107 ) 
+
+    sin undersampling
+
+4a_HT_lightgbm_under.r: 50 iteraciones
