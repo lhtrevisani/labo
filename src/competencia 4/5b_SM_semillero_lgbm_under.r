@@ -21,7 +21,7 @@ PARAM$exp_input <- "HT9422"
 
 # PARAM$modelos  <- 2
 PARAM$modelo <- 1 # se usa el mejor de la OB, pero a futuro podria variar esto
-PARAM$semilla_primos <- 333 * PARAM$modelo
+PARAM$semilla_primos <- 444 * PARAM$modelo
 PARAM$semillerio <- 100 # ¿De cuanto será nuestro semillerio?
 PARAM$indice_inicio_semilla <- 1
 PARAM$indice_fin_semilla <- 40
