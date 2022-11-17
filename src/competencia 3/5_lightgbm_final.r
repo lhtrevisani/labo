@@ -99,6 +99,7 @@ for( i in  1:PARAM$modelos )
   
   #genero el modelo entrenando en los datos finales
   set.seed( parametros$seed )
+  
   modelo_final  <- lightgbm( data= dtrain,
                              param=  parametros,
                              verbose= -100 )

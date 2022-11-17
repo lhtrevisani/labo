@@ -49,6 +49,13 @@ instrucciones corrida (estrategia):
 5b_SM_semillero_lgbm_under: se corren 40 semillas para los modelos 1, 2, 5, 10, 25, 50
 
 
+(modelo C)
+
+cross validation con los septiembres de los últimos 2 años.
+
+(rescato del bucket training strategy (solo cambio dfuture))
+
+
 Ensamble:
 
 Se toman los vectores de probabilidades de cada semilla de cada modelo, se rankea cada una de las observaciones según la probabilidad, y se promedia ese ranking resultante.
