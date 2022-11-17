@@ -82,7 +82,7 @@ fwrite(  tb_prediccion_semillerio_mean,
 
 
 fwrite(  modelos_semillerio_join,
-         file= paste0( PARAM$experimento, "_ranks.csv"),
+         file= paste0( PARAM$experimento, "_rank.csv"),
          sep= "," )
 
 ## genero distintos cortes para el ensamble
@@ -92,19 +92,19 @@ cortes  <- seq( from=  7000,
                 by=     500 )
 
 
-setorder( tb_prediccion_semillerio, prediccion )
+setorder( tb_prediccion_semillerio_mean, prediccion )
 
 for( corte in cortes )
 {
-  tb_prediccion_semillerio[  , Predicted := 0L ]
-  tb_prediccion_semillerio[ 1:corte, Predicted := 1L ]
+  tb_prediccion_semillerio_mean[  , Predicted := 0L ]
+  tb_prediccion_semillerio_mean[ 1:corte, Predicted := 1L ]
   
   nom_submit  <- paste0( PARAM$experimento, 
                          "_",
                          sprintf( "%05d", corte ),
                          ".csv" )
   
-  fwrite(  tb_prediccion_semillerio[ , list( numero_de_cliente, Predicted ) ],
+  fwrite(  tb_prediccion_semillerio_mean[ , list( numero_de_cliente, Predicted ) ],
            file= nom_submit,
            sep= "," )
   #print(nom_submit)
