@@ -10,7 +10,7 @@ require("stringr")
 # Parametros del script
 PARAM <- list()
 PARAM$experimento <- "ZZ1292_ganancias_semillerio"
-PARAM$exp_input <- c("ZZ9411_semillerio", "ZZ9412_semillerio")
+PARAM$exp_input <- c("ZZ9411_semillerio", "ZZ9421_semillerio", "ZZ9431_semillerio")
 
 # PARAM$corte <- 11000 # cantidad de envios
 # FIN Parametros del script
