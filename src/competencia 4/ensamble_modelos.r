@@ -9,7 +9,7 @@ require("dplyr")
 
 # Parametros del script
 PARAM <- list()
-PARAM$experimento <- "ZZ1292_ganancias_semillerio"
+PARAM$experimento <- "ZZ1291_submission_semillerio"
 PARAM$exp_input <- c("ZZ9411_semillerio", "ZZ9421_semillerio", "ZZ9431_semillerio")
 
 # PARAM$corte <- 11000 # cantidad de envios
@@ -48,11 +48,14 @@ tb_prediccion_semillerio <- data.table(
 )
 
 
+#creo la carpeta donde va el experimento
+dir.create( paste0( base_dir, "exp/", PARAM$experimento, "/"), showWarnings = FALSE )
+setwd(paste0( base_dir, "exp/", PARAM$experimento, "/"))   #Establezco el Working Directory DEL EXPERIMENTO
+
 ## guardo el ensamble en la carpeta del experimento
 fwrite(  tb_prediccion_semillerio,
-         file= paste0( PARAM$experimento, ".csv"),
+         file= "predicciones.csv",
          sep= "," )
-
 
 ## genero distintos cortes para el ensamble
 
