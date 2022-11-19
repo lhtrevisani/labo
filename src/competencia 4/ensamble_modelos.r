@@ -5,6 +5,7 @@ gc() # garbage collection
 require("data.table")
 require("purrr")
 require("readr")
+require("dplyr")
 
 # Parametros del script
 PARAM <- list()
