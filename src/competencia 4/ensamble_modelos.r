@@ -20,8 +20,8 @@ options(error = function() {
     stop("exiting after script error")
 })
 
-#base_dir <- "~/buckets/b1/"
-base_dir <- "~/Documents/Maestria/"
+base_dir <- "~/buckets/b1/"
+#base_dir <- "~/Documents/Maestria/"
 
 
 archivos_final = c()
