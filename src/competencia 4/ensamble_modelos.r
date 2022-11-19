@@ -59,7 +59,7 @@ fwrite(  tb_prediccion_semillerio,
 
 ## genero distintos cortes para el ensamble
 
-cortes  <- seq( from=  7000,
+cortes  <- seq( from=  5500,
                 to=   15000,
                 by=     500 )
 
