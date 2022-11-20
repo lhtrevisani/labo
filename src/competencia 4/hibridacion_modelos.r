@@ -2,14 +2,17 @@
 rm(list = ls()) # remove all objects
 gc() # garbage collection
 
+options(scipen=999)
+
 require("data.table")
 require("purrr")
 require("readr")
 require("stringr")
+require("dplyr")
 
 # Parametros del script
 PARAM <- list()
-PARAM$experimento <- "ZZ1292_ganancias_semillerio"
+PARAM$experimento <- "ZZ1292_submission_semillerio"
 PARAM$exp_input <- c("ZZ9411_semillerio", "ZZ9421_semillerio", "ZZ9431_semillerio")
 
 # PARAM$corte <- 11000 # cantidad de envios
@@ -21,8 +24,8 @@ options(error = function() {
     stop("exiting after script error")
 })
 
-#base_dir <- "~/buckets/b1/"
-base_dir <- "~/Documents/Maestria/"
+base_dir <- "~/buckets/b1/"
+#base_dir <- "~/Documents/Maestria/"
 
 
 ## creo la ruta de todos los modelos y semillas, y una lista de los modelos a hibridar
@@ -47,7 +50,7 @@ modelos_semillerio = list()
 
 for (i in modelos_final) {
   
-  data_join <- archivos_final[str_detect(archivos_final, "ZZ9411_semillerio_modelo1")] %>%
+  data_join <- archivos_final[str_detect(archivos_final, i)] %>%
     lapply(read_csv) %>%                              # Store all files in list
     reduce(full_join, by = "numero_de_cliente") %>%   # Full-join data sets into one data set
     select(numero_de_cliente,contains("rank"))
@@ -66,13 +69,24 @@ modelos_semillerio_join = modelos_semillerio %>%
   reduce(full_join, by = "numero_de_cliente")
 
 
+modelos_semillerio_join$numero_de_cliente = as.character(modelos_semillerio_join$numero_de_cliente)
+
+str(modelos_semillerio_join)
+
+modelos_semillerio_join <- modelos_semillerio_join %>% 
+  mutate(across(where(is.numeric), frank, .names = "{.col}_rank")) %>%   # Full-join data sets into one data set
+  select(numero_de_cliente,contains("rank"))
+
+
 # Esta es la predicción del semillerio para la semilla i-esima
 tb_prediccion_semillerio_mean <- data.table(
   modelos_semillerio_join[, 1],
-  prediccion = rowMeans(modelos_semillerio_join[, c(-1)]) # excluye el numero_de_cliente del cálculo de la media
+  prediccion = round(rowMeans(modelos_semillerio_join[, c(-1)]), 2) # excluye el numero_de_cliente del cálculo de la media
 )
 
-## podría intentar hibridar de otra manera que no sea mean de ranking (ej: votación o )
+#creo la carpeta donde va el experimento
+dir.create( paste0( base_dir, "exp/", PARAM$experimento, "/"), showWarnings = FALSE )
+setwd(paste0( base_dir, "exp/", PARAM$experimento, "/"))   #Establezco el Working Directory DEL EXPERIMENTO
 
 
 ## guardo el ensamble en la carpeta del experimento
@@ -87,9 +101,9 @@ fwrite(  modelos_semillerio_join,
 
 ## genero distintos cortes para el ensamble
 
-cortes  <- seq( from=  7000,
+cortes  <- seq( from=  4000,
                 to=   15000,
-                by=     500 )
+                by=     250 )
 
 
 setorder( tb_prediccion_semillerio_mean, prediccion )
